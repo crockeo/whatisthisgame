@@ -1,5 +1,9 @@
 module Main where
 
+-------------------
+-- Local Imports --
+import WhatIsThisGame.Network
+
 ----------
 -- Code --
 
