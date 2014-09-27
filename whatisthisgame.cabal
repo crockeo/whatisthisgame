@@ -1,0 +1,23 @@
+name:                whatisthisgame
+version:             0.1.0.0
+synopsis:            A game written using Elerea and Haskell to learna bout larger-scale (relative to my other projects) game development using FRP.
+description:         A game written using Elerea and Haskell to learna bout larger-scale (relative to my other projects) game development using FRP.
+homepage:            http://github.com/crockeo/whatisthisgame
+license:             MIT
+license-file:        LICENSE
+author:              Cerek Hillen
+maintainer:          cerekh@gmail.com
+copyright:           (c) 2014, Cerek Hillen
+category:            Game
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+executable whatisthisgame
+  main-is:             WhatIsThisGame.Main
+
+  build-depends:       base == 4.7.*
+
+  hs-source-dirs:      src/
+
+  default-language:    Haskell2010
