@@ -9,3 +9,6 @@ module WhatIsThisGame.Types where
 -- | Specifying that a type can be rendered.
 class Renderable a where
   render :: a -> IO ()
+
+-- | Specifying the @'World'@ type.
+data World = World
