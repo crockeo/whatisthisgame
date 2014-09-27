@@ -1,4 +1,5 @@
--- | This module provides the
+-- | This module provides the logic for constructing and rendering the game
+--   world.
 module WhatIsThisGame.World where
 
 --------------------
