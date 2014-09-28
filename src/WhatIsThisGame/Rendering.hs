@@ -39,7 +39,11 @@ tileTex =
 calcQuad :: [[V2 GLfloat]] -> [PlainFieldRec [VertexCoord, GLSLColor]]
 calcQuad =
   foldMap (flip (zipWith (<+>)) (cycle coords) . map (vertexCoord =:))
-  where coords = [glslColor =: V4 1.0 1.0 1.0 1.0]
+  where coords = map (glslColor =:) [ V4 1 0 0 1
+                                    , V4 0 1 0 1
+                                    , V4 0 0 1 1
+                                    , V4 1 0 1 1
+                                    ]
 
 -- | Calculating the number of indices required for a list.
 calcIndices :: (Enum b, Num b) => [a] -> [b]
