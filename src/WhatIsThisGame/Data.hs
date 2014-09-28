@@ -10,13 +10,14 @@ module WhatIsThisGame.Data where
 import Graphics.Rendering.OpenGL
 import Data.Vinyl.Universe
 import Linear.Matrix
+import Data.Vinyl
 import Linear.V2
 
 ----------
 -- Code --
 
 -- | The matrix of the camera.
-type CamMatrix = '["cam" ::: M33 GLfloat]
+type CamMatrix = PlainFieldRec '["cam" ::: M33 GLfloat]
 
 -- | A vertex coordinate to pass to GLSL.
 type VertexCoord  = "vertexCoord"  ::: V2 GLfloat
@@ -35,6 +36,11 @@ textureCoord = SField
 -- | Specifying that a type can be rendered.
 class Renderable a where
   render :: a -> IO ()
+
+-- | A pure form of rendering sprites - can be optimized pre-render to increase
+--   performance.
+data SpriteRender = SpriteRender TextureObject (V2 Float) (V2 Float)
+                  | SpriteRenders [SpriteRender]
 
 -- | Specifying the @'World'@ type.
 data World = World
