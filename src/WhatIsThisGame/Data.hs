@@ -69,6 +69,8 @@ data AssetLoad = SpriteLoad FilePath
                | ShaderLoad FilePath
                | AssetLoads [AssetLoad]
 
+-- | Allowing @'AssetLoad'@s to be joined together into one nebulous
+--   @'AssetLoad'@ containing all of the loads.
 instance Monoid AssetLoad where
   mempty = AssetLoads []
 
@@ -82,6 +84,8 @@ data Assets = Assets { getSprites :: Map.Map FilePath Sprite
                      , getShaders :: Map.Map FilePath Shader
                      }
 
+-- | Allowing different @'Assets'@ to be joined. Primarily for easier loading
+--   of assets.
 instance Monoid Assets where
   mempty = Assets { getSprites = mempty
                   , getShaders = mempty
@@ -92,6 +96,7 @@ instance Monoid Assets where
            , getShaders = sh1 `mappend` sh2
            }
 
+-- | A synonym for map's access function.
 (!) :: Ord a => Map.Map a b -> a -> b
 (!) = (Map.!)
 
