@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
 module WhatIsThisGame.Rendering ( generateVertices
                                 , renderQuads
                                 , renderSpriteBatch
@@ -6,9 +7,13 @@ module WhatIsThisGame.Rendering ( generateVertices
 
 --------------------
 -- Global Imports --
-import Graphics.Rendering.OpenGL hiding (Shader)
+import Graphics.Rendering.OpenGL hiding ( Shader
+                                        , Color
+                                        )
+
 import Data.Foldable hiding (foldl1)
 import Control.Applicative
+import Data.Vinyl.TyFun
 import Graphics.VinylGL
 import Graphics.GLUtil
 import Data.Vinyl
@@ -21,6 +26,10 @@ import WhatIsThisGame.Data
 
 ----------
 -- Code --
+
+-- | Binding a color.
+bindColor :: (App el GLSLColor ~ V4 GLfloat, Applicative f) => Color -> Rec el f '[GLSLColor]
+bindColor (Color c) = glslColor =: fmap realToFrac c
 
 -- | Generating a list of vertices for a quad based on a position and a size.
 generateVertices :: (Real a, Fractional b) => V2 a -> V2 a -> [V2 b]
@@ -36,23 +45,18 @@ tileTex =
   where coords = map (textureCoord =:) $ V2 <$> [0, 1] <*> [1, 0]
 
 -- | Computing the untextured vertex record for each input vertex.
-calcQuad :: [[V2 GLfloat]] -> [PlainFieldRec [VertexCoord, GLSLColor]]
-calcQuad =
-  foldMap (flip (zipWith (<+>)) (cycle coords) . map (vertexCoord =:))
-  where coords = map (glslColor =:) [ V4 1 0 0 1
-                                    , V4 0 1 0 1
-                                    , V4 0 0 1 1
-                                    , V4 1 0 1 1
-                                    ]
+calcQuad :: [Color] -> [[V2 GLfloat]] -> [PlainFieldRec [VertexCoord, GLSLColor]]
+calcQuad cs =
+  foldMap (flip (zipWith (<+>)) (cycle $ map bindColor cs) . map (vertexCoord =:))
 
 -- | Calculating the number of indices required for a list.
 calcIndices :: (Enum b, Num b) => [a] -> [b]
 calcIndices l = take (6 * length l) $ foldMap (flip map [0, 1, 2, 2, 1, 3] . (+)) [0, 4..]
 
 -- | Rendering a set of quads.
-renderQuads :: CamMatrix -> Shader -> [(V2 Float, V2 Float)] -> IO ()
-renderQuads cm (Shader sp) l = do
-  verts <- bufferVertices $ calcQuad $ map (uncurry generateVertices) l
+renderQuads :: CamMatrix -> Shader -> [Color] -> [(V2 Float, V2 Float)] -> IO ()
+renderQuads cm (Shader sp) cs l = do
+  verts <- bufferVertices $ calcQuad cs $ map (uncurry generateVertices) l
   eb    <- bufferIndices $ calcIndices l
   vao   <- makeVAO $ do
     enableVertices' sp verts

@@ -18,11 +18,17 @@ import WhatIsThisGame.Data
 -- | Providing the rendering for a @'World'@.
 instance Renderable World where
   render cm assets World =
-    renderQuads cm (getShaders assets ! "res/color") $
-      [ ( V2 0.25 0.25
-        , V2 0.5  0.5
-        )
-      ]
+    renderQuads cm
+                (getShaders assets ! "res/color")
+                [ white
+                , red
+                , green
+                , blue
+                ]
+                [ ( V2 0.25 0.25
+                  , V2 0.5  0.5
+                  )
+                ]
 
 -- | Providing an always-updated @'World'@.
 world :: SignalGen Float (Signal World)

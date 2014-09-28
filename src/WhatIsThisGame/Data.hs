@@ -7,8 +7,11 @@ module WhatIsThisGame.Data where
 
 --------------------
 -- Global Imports --
+import Graphics.Rendering.OpenGL hiding ( Shader
+                                        , Color
+                                        )
+
 import qualified Data.Map.Strict as Map
-import Graphics.Rendering.OpenGL hiding (Shader)
 import Data.Vinyl.Universe
 import Graphics.GLUtil
 import Linear.Matrix
@@ -43,6 +46,17 @@ textureCoord = SField
 -- | An instance for the @'GLSLColor'@.
 glslColor :: SField GLSLColor
 glslColor = SField
+
+-- | A synonym for a color represented by 4 @'Float'@s.
+newtype Color = Color (V4 Float)
+
+-- | An instance of the @'Color'@ datatype.
+white, black, red, green, blue :: Color
+white = Color $ V4 1 1 1 1
+black = Color $ V4 0 0 0 1
+red   = Color $ V4 1 0 0 1
+green = Color $ V4 0 1 0 1
+blue  = Color $ V4 0 0 1 1
 
 -- | A data structure to represent a sprite.
 newtype Sprite = Sprite TextureObject
