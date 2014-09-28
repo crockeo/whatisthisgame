@@ -1,7 +1,7 @@
 -- | The module that contains all of the type definitions in the library.
 --   They're contained in one place so that recursive module imports may be
 --   avoided when only because of type definitions.
-module WhatIsThisGame.Types where
+module WhatIsThisGame.Data where
 
 ----------
 -- Code --

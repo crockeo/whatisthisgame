@@ -11,7 +11,7 @@ import Data.IORef
 
 -------------------
 -- Local Imports --
-import WhatIsThisGame.Types
+import WhatIsThisGame.Data
 
 ----------
 -- Code --

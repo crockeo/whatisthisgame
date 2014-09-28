@@ -10,7 +10,7 @@ import Linear.V2
 
 -------------------
 -- Local Imports --
-import WhatIsThisGame.Types
+import WhatIsThisGame.Data
 
 ----------
 -- Code --
