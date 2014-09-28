@@ -27,6 +27,12 @@ import WhatIsThisGame.Data
 ----------
 -- Code --
 
+-- | Scaling a coordinate to the window size.
+scaleCoord :: (Real a, Fractional b) => V2 a -> V2 b
+scaleCoord (V2 x y) =
+  V2 (realToFrac x / 640 * 100)
+     (realToFrac y / 480 * 100)
+
 -- | Binding a color.
 bindColor :: (App el GLSLColor ~ V4 GLfloat, Applicative f) => Color -> Rec el f '[GLSLColor]
 bindColor (Color c) = glslColor =: fmap realToFrac c
@@ -35,8 +41,8 @@ bindColor (Color c) = glslColor =: fmap realToFrac c
 generateVertices :: (Real a, Fractional b) => V2 a -> V2 a -> [V2 b]
 generateVertices p s =
   V2 <$> [x, x + w] <*> [y, y + h]
-  where (V2 x y) = fmap realToFrac p
-        (V2 w h) = fmap realToFrac s
+  where (V2 x y) = scaleCoord p
+        (V2 w h) = scaleCoord s
 
 -- | Compute a textured vertex record for each input vertex.
 tileTex :: [[V2 GLfloat]] -> [PlainFieldRec [VertexCoord, TextureCoord]]
