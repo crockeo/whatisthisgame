@@ -133,6 +133,11 @@ isDead e = getHealth e <= 0
 
 -- | A data structure that represents the kind of input an @'Entity'@ (or
 --   @'EntityT'@) needs to take in to produce an update.
+--
+--   In order of their appearance its parameters stand for:
+--     * Should the @'Entity'@ jump?
+--     * Should the @'Entity'@ fire a new projectile?
+--     * Inflict x amount of damage onto the @'Enemy'@.
 data EntityUpdate = EntityUpdate Bool Bool Float
 
 -- | Specifying the @'World'@ type.
