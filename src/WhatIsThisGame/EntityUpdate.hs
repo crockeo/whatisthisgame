@@ -26,7 +26,7 @@ playerController sd = do
 
   pure $ EntityUpdate <$> jkd <*> skd <*> sd <*> (calcSpeed <$> lkd <*> rkd)
   where calcSpeed :: Bool -> Bool -> Float
-        calcSpeed False False = 3
-        calcSpeed  True  True = 3
+        calcSpeed False False = playerMoveSpeed
+        calcSpeed  True  True = playerMoveSpeed
         calcSpeed False  True = playerMoveSpeed + playerMoveSpeed / 2
         calcSpeed  True False = playerMoveSpeed - playerMoveSpeed / 2

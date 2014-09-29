@@ -138,7 +138,7 @@ instance Renderable Entity where
 
 -- | The default move speed of the player.
 playerMoveSpeed :: Float
-playerMoveSpeed = 3
+playerMoveSpeed = 0
 
 -- | The default height of the ground.
 groundHeight :: Float
