@@ -14,6 +14,7 @@ import Data.IORef
 
 -------------------
 -- Local Imports --
+import WhatIsThisGame.Rendering
 import WhatIsThisGame.Assets
 import WhatIsThisGame.Data
 
@@ -30,8 +31,10 @@ runNetwork' closedRef cm assets sfn = do
       a <- get GLFW.time >>= sfn . realToFrac
       GLFW.time $= 0
 
+      let (r, sp) = render assets a
+
       clear [ColorBuffer, DepthBuffer]
-      render (SField =: camMatrix cm) assets a
+      performRender (SField =: camMatrix cm) sp r
       swapBuffers
 
       runNetwork' closedRef cm assets sfn

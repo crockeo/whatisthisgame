@@ -97,18 +97,28 @@ instance Monoid Assets where
            , getShaders = sh1 `mappend` sh2
            }
 
+-- | A pure form of render calls. Can be optimized pre-render to increase
+--   performance.
+data Render = SpriteRender Sprite  (V2 Float) (V2 Float)
+            | QuadRender   [Color] (V2 Float) (V2 Float)
+            | Renders      [Render]
+
+-- | Allowing @'Render'@s to be composed through mconcat/mappend.
+instance Monoid Render where
+  mempty = Renders []
+
+  mappend (Renders l1) (Renders l2) = Renders $ l1 ++ l2
+  mappend (Renders l1) other        = Renders $ other : l1
+  mappend other        (Renders l1) = Renders $ other : l1
+  mappend other1       other2       = Renders [other1, other2]
+
 -- | A synonym for map's access function.
 (!) :: Ord a => Map.Map a b -> a -> b
 (!) = (Map.!)
 
 -- | Specifying that a type can be rendered.
 class Renderable a where
-  render :: CamMatrix -> Assets -> a -> IO ()
-
--- | A pure form of rendering sprites - can be optimized pre-render to increase
---   performance.
-data SpriteRender = SpriteRender Sprite (V2 Float) (V2 Float)
-                  | SpriteRenders [SpriteRender]
+  render :: Assets -> a -> (Render, Shader)
 
 -- | The definition of the information necessary for an entity.
 data Entity = Entity { getPosition    :: V2 Float
