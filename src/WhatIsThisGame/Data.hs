@@ -118,7 +118,7 @@ instance Monoid Render where
 
 -- | Specifying that a type can be rendered.
 class Renderable a where
-  render :: Assets -> a -> (Render, Shader)
+  render :: Assets -> a -> Render
 
 -- | The definition of the information necessary for an entity.
 data Entity = Entity { getPosition    :: V2 Float

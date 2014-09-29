@@ -23,7 +23,7 @@ import WhatIsThisGame.Data
 
 -- | The backend to running the network.
 runNetwork' :: Renderable a => IORef Bool -> Camera GLfloat -> Assets -> (Float -> IO a) -> IO ()
-runNetwork' closedRef cm assets sfn = do
+runNetwork' closedRef cam assets sfn = do
   closed <- readIORef closedRef
   if closed
     then return ()
@@ -31,13 +31,16 @@ runNetwork' closedRef cm assets sfn = do
       a <- get GLFW.time >>= sfn . realToFrac
       GLFW.time $= 0
 
-      let (r, sp) = render assets a
+      let cm = (SField =: camMatrix cam)
+          sp = (getShaders assets ! "res/game2d", getShaders assets ! "res/color")
+          r  = render assets a
+
 
       clear [ColorBuffer, DepthBuffer]
-      performRender (SField =: camMatrix cm) sp r
+      performRender cm sp r
       swapBuffers
 
-      runNetwork' closedRef cm assets sfn
+      runNetwork' closedRef cam assets sfn
 
 -- | Running the network.
 runNetwork :: Renderable a => IORef Bool -> SignalGen Float (Signal a) -> IO ()

@@ -40,6 +40,7 @@ performLoad (AssetLoads l ) = liftM mconcat $ mapM performLoad l
 loadAssets :: IO Assets
 loadAssets =
   performLoad $ mconcat
-    [ ShaderLoad "res/shader"
+    [ ShaderLoad "res/game2d"
     , ShaderLoad "res/color"
+    , SpriteLoad "res/test.png"
     ]

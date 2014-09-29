@@ -25,50 +25,6 @@ import WhatIsThisGame.Data
 ----------
 -- Code --
 
-{-
-
--- | Rendering a set of quads.
-renderQuads :: CamMatrix -> Shader -> [Color] -> [(V2 Float, V2 Float)] -> IO ()
-renderQuads cm (Shader sp) cs l = do
-  let llen = length l
-
-  verts <- bufferVertices $ calcQuad cs $ map (uncurry generateVertices) l
-  eb    <- bufferIndices $ calcIndices llen
-  vao   <- makeVAO $ do
-    enableVertices' sp verts
-    bindVertices verts
-    bindBuffer ElementArrayBuffer $= Just eb
-
-  currentProgram $= Just (program sp)
-  setUniforms sp cm
-  withVAO vao $ drawIndexedTris (fromIntegral llen * 2)
-
-  deleteVertices verts
-  deleteObjectName eb
-  deleteVAO vao
-
--- | Rendering a bunch of sprites.
-renderTextures :: CamMatrix -> Shader -> [TextureObject] -> [V2 Float] -> [V2 Float] -> IO ()
-renderTextures cm (Shader sp) tos ps ss = do
-  let llen = length tos
-
-  verts <- bufferVertices $ tileTex $ map (uncurry generateVertices) $ zip ps ss
-  eb    <- bufferIndices $ calcIndices llen
-  vao   <- makeVAO $ do
-    enableVertices' sp verts
-    bindVertices verts
-    bindBuffer ElementArrayBuffer $= Just eb
-
-  currentProgram $= Just (program sp)
-  setUniforms sp cm
-  withVAO vao . withTextures2D tos $ drawIndexedTris 2
-
-  deleteVertices verts
-  deleteObjectName eb
-  deleteVAO vao
-
--}
-
 -- | Scaling a coordinate to the window size.
 scaleCoord :: (Real a, Fractional b) => V2 a -> V2 b
 scaleCoord (V2 x y) =
@@ -150,13 +106,12 @@ renderQuads cm (Shader sp) rs = do
   return ()
 
 -- | Performing a render on a whole @'Render'@ call.
-performRender :: CamMatrix -> Shader -> Render -> IO ()
-performRender cm sp r = do
-  print "wat"
+performRender :: CamMatrix -> (Shader, Shader) -> Render -> IO ()
+performRender cm (ssp, qsp) r = do
   let (srs, qrs) = split r
 
-  unless (null srs) $ renderSprites cm sp srs
-  unless (null qrs) $ renderQuads   cm sp qrs
+  unless (null srs) $ renderSprites cm ssp srs
+  unless (null qrs) $ renderQuads   cm qsp qrs
   where split :: Render -> ([Render], [Render])
         split sr@(SpriteRender _ _ _) = ([sr],   [])
         split qr@(QuadRender   _ _ _) = (  [], [qr])
