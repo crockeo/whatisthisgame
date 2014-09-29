@@ -16,6 +16,7 @@ import qualified Data.Map.Strict as Map
 import Data.Vinyl.Universe
 import Graphics.GLUtil
 import Linear.Matrix
+import Control.Lens
 import Data.Monoid
 import Data.Vinyl
 import Linear.V4
@@ -123,13 +124,26 @@ class Renderable a where
 -- | The definition of the information necessary for an entity.
 data Entity = Entity { getPosition    :: V2 Float
                      , getSize        :: V2 Float
-                     , getHealth      :: V2 Float
+                     , getHealth      :: Float
                      , getSprite      :: Sprite
+                     , shouldShoot    :: Bool
                      }
+
+-- | The default move speed of the player.
+playerMoveSpeed :: Float
+playerMoveSpeed = 3
+
+-- | The default height of the ground.
+groundHeight :: Float
+groundHeight = 1
 
 -- | Checking if an @'Entity'@ is dead.
 isDead :: Entity -> Bool
 isDead e = getHealth e <= 0
+
+-- | Checking if an @'Entity'@ is on the ground.
+onGround :: Entity -> Bool
+onGround e = (getPosition e ^. _y) <= groundHeight
 
 -- | A data structure that represents the kind of input an @'Entity'@ (or
 --   @'EntityT'@) needs to take in to produce an update.
@@ -138,7 +152,12 @@ isDead e = getHealth e <= 0
 --     * Should the @'Entity'@ jump?
 --     * Should the @'Entity'@ fire a new projectile?
 --     * Inflict x amount of damage onto the @'Enemy'@.
-data EntityUpdate = EntityUpdate Bool Bool Float
+--     * The speed (in the x-axis) that the @'Entity'@ should be moving.
+data EntityUpdate = EntityUpdate { euJump  :: Bool
+                                 , euShoot :: Bool
+                                 , euDmg   :: Float
+                                 , euMove  :: Float
+                                 }
 
 -- | Specifying the @'World'@ type.
 data World = World
