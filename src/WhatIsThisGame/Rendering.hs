@@ -56,14 +56,16 @@ calcQuad cs =
   foldMap (flip (zipWith (<+>)) (cycle $ map bindColor cs) . map (vertexCoord =:))
 
 -- | Calculating the number of indices required for a list.
-calcIndices :: (Enum b, Num b) => [a] -> [b]
-calcIndices l = take (6 * length l) $ foldMap (flip map [0, 1, 2, 2, 1, 3] . (+)) [0, 4..]
+calcIndices :: (Enum b, Num b) => Int -> [b]
+calcIndices n = take (6 * n) $ foldMap (flip map [0, 1, 2, 2, 1, 3] . (+)) [0, 4..]
 
 -- | Rendering a set of quads.
 renderQuads :: CamMatrix -> Shader -> [Color] -> [(V2 Float, V2 Float)] -> IO ()
 renderQuads cm (Shader sp) cs l = do
+  let llen = length l
+
   verts <- bufferVertices $ calcQuad cs $ map (uncurry generateVertices) l
-  eb    <- bufferIndices $ calcIndices l
+  eb    <- bufferIndices $ calcIndices llen
   vao   <- makeVAO $ do
     enableVertices' sp verts
     bindVertices verts
@@ -71,7 +73,7 @@ renderQuads cm (Shader sp) cs l = do
 
   currentProgram $= Just (program sp)
   setUniforms sp cm
-  withVAO vao $ drawIndexedTris 2
+  withVAO vao $ drawIndexedTris (fromIntegral llen * 2)
 
   deleteVertices verts
   deleteObjectName eb
@@ -80,12 +82,13 @@ renderQuads cm (Shader sp) cs l = do
 -- | Rendering a bunch of sprites.
 renderTextures :: CamMatrix -> Shader -> [(Sprite, V2 Float, V2 Float)] -> IO ()
 renderTextures cm (Shader sp) l = do
-  let tos = map (\((Sprite a), _, _) -> a) l
-      ps  = map (\(_, a, _) -> a) l
-      ss  = map (\(_, _, a) -> a) l
+  let llen = length l
+      tos  = map (\((Sprite a), _, _) -> a) l
+      ps   = map (\(_, a, _) -> a) l
+      ss   = map (\(_, _, a) -> a) l
 
   verts <- bufferVertices $ tileTex $ map (uncurry generateVertices) $ zip ps ss
-  eb    <- bufferIndices $ calcIndices l
+  eb    <- bufferIndices $ calcIndices llen
   vao   <- makeVAO $ do
     enableVertices' sp verts
     bindVertices verts
