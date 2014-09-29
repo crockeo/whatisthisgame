@@ -122,12 +122,19 @@ class Renderable a where
   render :: Assets -> a -> Render
 
 -- | The definition of the information necessary for an entity.
-data Entity = Entity { getPosition    :: V2 Float
+data Entity = Entity { getName        :: String
+                     , getPosition    :: V2 Float
                      , getSize        :: V2 Float
                      , getHealth      :: Float
-                     , getSprite      :: Sprite
                      , shouldShoot    :: Bool
                      }
+
+-- | Rendering an entity.
+instance Renderable Entity where
+  render assets e =
+    SpriteRender (getSprites assets ! getName e)
+                 (getPosition e)
+                 (getSize     e)
 
 -- | The default move speed of the player.
 playerMoveSpeed :: Float
@@ -160,4 +167,4 @@ data EntityUpdate = EntityUpdate { euJump  :: Bool
                                  }
 
 -- | Specifying the @'World'@ type.
-data World = World
+data World = World [Entity]

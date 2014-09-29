@@ -43,4 +43,5 @@ loadAssets =
     [ ShaderLoad "res/game2d"
     , ShaderLoad "res/color"
     , SpriteLoad "res/test.png"
+    , SpriteLoad "res/player.png"
     ]
