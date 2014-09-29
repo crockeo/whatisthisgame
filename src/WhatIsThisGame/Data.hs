@@ -110,41 +110,20 @@ class Renderable a where
 data SpriteRender = SpriteRender Sprite (V2 Float) (V2 Float)
                   | SpriteRenders [SpriteRender]
 
+-- | The definition of the information necessary for an entity.
+data Entity = Entity { getPosition    :: V2 Float
+                     , getSize        :: V2 Float
+                     , getHealth      :: V2 Float
+                     , getSprite      :: Sprite
+                     }
+
+-- | Checking if an @'Entity'@ is dead.
+isDead :: Entity -> Bool
+isDead e = getHealth e <= 0
+
 -- | A data structure that represents the kind of input an @'Entity'@ (or
 --   @'EntityT'@) needs to take in to produce an update.
-data EntityUpdate = EntityUpdate
-
--- | A class that represents the functionality that an Entity can take on.
-class Renderable a => EntityT a where
-  onGround :: a -> Bool
-  getHealth :: a -> Float
-  isDead' :: a -> Bool
-  makeProjectile :: a -> Bool
-  update :: a -> EntityUpdate -> a
-
-  isDead :: a -> Bool
-  isDead a = getHealth a < 0 || isDead' a
-
--- | Something that can control a given entity. Effectively the API for writing
---   AI for any given Entity. Also serves as the input manager for the player.
-class EntityController a where
-  control :: a -> EntityUpdate
-
--- | A generic type to represent an @'EntityT'@.
-data Entity = forall a. EntityT a => Entity a
-
--- | Allowing the generic @'Entity'@ to be rendered.
-instance Renderable Entity where
-  render cm assets (Entity a) = render cm assets a
-
--- | Allowing the generic @'Entity'@ to be used as a @'EntityT'@.
-instance EntityT Entity where
-  onGround       (Entity a)     = onGround        a
-  getHealth      (Entity a)     = getHealth       a
-  isDead'        (Entity a)     = isDead'         a
-  makeProjectile (Entity a)     = makeProjectile  a
-  update         (Entity a) eu  = Entity $ update a eu
-  isDead         (Entity a)     = isDead          a
+data EntityUpdate = EntityUpdate Bool Bool Float
 
 -- | Specifying the @'World'@ type.
 data World = World
