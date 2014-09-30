@@ -115,7 +115,11 @@ performRender cm (ssp, qsp) r = do
   where split :: Render -> ([Render], [Render])
         split sr@(SpriteRender _ _ _) = ([sr],   [])
         split qr@(QuadRender   _ _ _) = (  [], [qr])
-        split    (Renders          l) = foldl1 joinTuple $ map split l
+        split    (Renders          l) =
+          let l' = map split l in
+            if null l'
+              then ([], [])
+              else foldl1 joinTuple l'
 
         joinTuple :: ([Render], [Render]) -> ([Render], [Render]) -> ([Render], [Render])
         joinTuple (srs1, qrs1) (srs2, qrs2) = (srs1 ++ srs2, qrs1 ++ qrs2)

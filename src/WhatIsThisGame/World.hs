@@ -5,14 +5,13 @@ module WhatIsThisGame.World where
 --------------------
 -- Global Imports --
 import Control.Applicative
+import Control.Monad.Fix
 import FRP.Elerea.Param
 import Data.Monoid
-import Linear.V2
 
 -------------------
 -- Local Imports --
-import WhatIsThisGame.EntityTransform
-import WhatIsThisGame.Entity
+import WhatIsThisGame.Controllers.Player
 import WhatIsThisGame.Data
 
 ----------
@@ -23,20 +22,16 @@ instance Renderable World where
   render assets (World es) =
     mconcat $ map (render assets) es
 
--- | REMOVE LATER
---   A placeholder for the initial player definition.
-initialPlayer :: Entity
-initialPlayer = Entity { getName     = "res/player.png"
-                       , getPosition = V2 0.1 1
-                       , getSize     = V2 0.4 1
-                       , getHealth   = 150
-                       , shouldShoot = False
-                       }
+-- | The initial state of the world.
+initialWorld :: World
+initialWorld = World []
+
+-- | Providing the back-end to the @'world'@ function.
+world' :: Signal World -> SignalGen Float (Signal World)
+world' w = do
+  p <- player w
+  delay initialWorld $ (\a -> World [a]) <$> p
 
 -- | Providing an always-updated @'World'@.
 world :: SignalGen Float (Signal World)
-world = do
-  pc <- playerController
-
-  ents <- entities [(initialPlayer, pc)]
-  return $ World <$> ents
+world = mfix world'
