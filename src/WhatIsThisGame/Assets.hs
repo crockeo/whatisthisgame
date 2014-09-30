@@ -44,4 +44,5 @@ loadAssets =
     , ShaderLoad "res/color"
     , SpriteLoad "res/test.png"
     , SpriteLoad "res/player.png"
+    , SpriteLoad "res/background.png"
     ]

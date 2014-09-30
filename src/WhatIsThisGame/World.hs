@@ -11,6 +11,7 @@ import Data.Monoid
 
 -------------------
 -- Local Imports --
+import WhatIsThisGame.Controllers.Background
 import WhatIsThisGame.Controllers.Player
 import WhatIsThisGame.Data
 
@@ -29,8 +30,14 @@ initialWorld = World []
 -- | Providing the back-end to the @'world'@ function.
 world' :: Signal World -> SignalGen Float (Signal World)
 world' w = do
+  b <- background w
   p <- player w
-  delay initialWorld $ (\a -> World [a]) <$> p
+
+  let l = sequence [ b
+                   , p
+                   ]
+
+  delay initialWorld $ World <$> l
 
 -- | Providing an always-updated @'World'@.
 world :: SignalGen Float (Signal World)

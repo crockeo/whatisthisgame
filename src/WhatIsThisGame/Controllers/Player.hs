@@ -38,7 +38,7 @@ initialPlayer :: Entity
 initialPlayer =
   Entity { getName     = "res/player.png"
          , getPosition = V2 0.1 1
-         , getSize     = V2 0.4 1
+         , getSize     = V2 0.6 0.9
          , getHealth   = 150
          , shouldShoot = False
          }

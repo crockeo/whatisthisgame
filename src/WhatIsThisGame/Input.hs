@@ -18,8 +18,8 @@ ioRenderSize =
   fmap convert $ get windowSize
   where convert :: Size -> V2 Float
         convert (Size w h) =
-          V2 (fromIntegral w)
-             (fromIntegral h)
+          V2 (fromIntegral w / 640 * 100)
+             (fromIntegral h / 640 * 100)
 
 -- | Getting the render size of the window in the Elerea network.
 renderSize :: SignalGen p (Signal (V2 Float))
