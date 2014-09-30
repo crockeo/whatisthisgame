@@ -30,6 +30,9 @@ main = do
   closedRef <- newIORef False
   windowCloseCallback $= makeWindowCloseCallback closedRef
 
+  blend     $= Enabled
+  blendFunc $= (SrcAlpha, OneMinusSrcAlpha)
+
   runNetwork closedRef world
 
   closeWindow
