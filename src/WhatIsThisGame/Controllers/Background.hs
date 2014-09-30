@@ -7,8 +7,6 @@ import FRP.Elerea.Param
 import Control.Monad
 import Linear.V2
 
-import Debug.Trace
-
 -------------------
 -- Local Imports --
 import WhatIsThisGame.Entity

@@ -8,7 +8,7 @@ import Graphics.Rendering.OpenGL hiding ( Shader
                                         , Color
                                         )
 
-import Data.Foldable hiding (foldl1)
+import Data.Foldable hiding (foldl1, forM_)
 import Control.Applicative
 import Data.Vinyl.TyFun
 import Graphics.VinylGL
@@ -107,6 +107,10 @@ renderQuads cm (Shader sp) rs = do
 
   return ()
 
+{-
+
+KEEP THIS CODE FOR WHEN YOU NEED TO OPTIMISE IT LATER.
+
 -- | Performing a render on a whole @'Render'@ call.
 performRender :: CamMatrix -> (Shader, Shader) -> Render -> IO ()
 performRender cm (ssp, qsp) r = do
@@ -125,3 +129,10 @@ performRender cm (ssp, qsp) r = do
 
         joinTuple :: ([Render], [Render]) -> ([Render], [Render]) -> ([Render], [Render])
         joinTuple (srs1, qrs1) (srs2, qrs2) = (srs1 ++ srs2, qrs1 ++ qrs2)
+
+-}
+
+performRender :: CamMatrix -> (Shader, Shader) -> Render -> IO ()
+performRender cm (ssp,   _) sr@(SpriteRender _ _ _) = renderSprites cm ssp [sr]
+performRender cm (  _, qsp) qr@(QuadRender   _ _ _) = renderQuads   cm qsp [qr]
+performRender cm shaders       (Renders          l) = forM_ l $ performRender cm shaders
