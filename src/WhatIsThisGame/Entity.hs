@@ -7,6 +7,7 @@ module WhatIsThisGame.Entity ( entity
 --------------------
 -- Global Imports --
 import Control.Applicative
+import Control.Monad.Fix
 import FRP.Elerea.Param
 import Control.Lens
 import Linear.V2
@@ -18,14 +19,15 @@ import WhatIsThisGame.Data
 ----------
 -- Code --
 
--- | Updating an @'Entity'@ with an @'EntityUpdate'@.
-update :: Float -> EntityUpdate -> Entity -> Entity
-update dt eu e = e { getPosition = getPosition e & _x .~ getPosition e ^. _x + euMove eu * dt }
+-- | The back-end for updating an @'Entity'@.
+entity' :: Entity -> Signal EntityTransform -> Signal Entity -> SignalGen Float (Signal Entity)
+entity' e set se = do
+  delay e $ set <*> se
 
 -- | The front-end for updating an @'Entity'@.
-entity :: Entity -> Signal EntityUpdate -> SignalGen Float (Signal Entity)
-entity e seu = transfer e update seu
+entity :: Entity -> Signal EntityTransform -> SignalGen Float (Signal Entity)
+entity e set = mfix $ entity' e set
 
 -- | Creating a number of entities.
-entities :: [(Entity, Signal EntityUpdate)] -> SignalGen Float (Signal [Entity])
+entities :: [(Entity, Signal EntityTransform)] -> SignalGen Float (Signal [Entity])
 entities eps = sequence <$> mapM (uncurry entity) eps

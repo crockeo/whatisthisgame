@@ -36,7 +36,7 @@ initialPlayer = Entity { getName     = "res/player.png"
 -- | Providing an always-updated @'World'@.
 world :: SignalGen Float (Signal World)
 world = do
-  pc <- playerController 0
+  pc <- playerController
 
   ents <- entities [(initialPlayer, pc)]
   return $ World <$> ents

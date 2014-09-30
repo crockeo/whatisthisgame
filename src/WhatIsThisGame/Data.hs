@@ -152,19 +152,10 @@ isDead e = getHealth e <= 0
 onGround :: Entity -> Bool
 onGround e = (getPosition e ^. _y) <= groundHeight
 
--- | A data structure that represents the kind of input an @'Entity'@ (or
---   @'EntityT'@) needs to take in to produce an update.
---
---   In order of their appearance its parameters stand for:
---     * Should the @'Entity'@ jump?
---     * Should the @'Entity'@ fire a new projectile?
---     * Inflict x amount of damage onto the @'Enemy'@.
---     * The speed (in the x-axis) that the @'Entity'@ should be moving.
-data EntityUpdate = EntityUpdate { euJump  :: Bool
-                                 , euShoot :: Bool
-                                 , euDmg   :: Float
-                                 , euMove  :: Float
-                                 }
+-- | An alternative type to be used instead of the @'EntityUpdate'@ type. It
+--   works by creating one through an @'Entity'@ controller and then applying
+--   it to an @'Entity'@ to create the next @'Entity'@ for the frame.
+type EntityTransform = (Entity -> Entity)
 
 -- | Specifying the @'World'@ type.
 data World = World [Entity]
