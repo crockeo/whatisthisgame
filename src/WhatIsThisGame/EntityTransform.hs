@@ -1,6 +1,6 @@
 -- | This module provides some defaults for entity control in addition to some
 --   more convenient type synonyms.
-module WhatIsThisGame.EntityUpdate (playerController) where
+module WhatIsThisGame.EntityTransform (playerController) where
 
 --------------------
 -- Global Imports --

@@ -11,7 +11,7 @@ import Linear.V2
 
 -------------------
 -- Local Imports --
-import WhatIsThisGame.EntityUpdate
+import WhatIsThisGame.EntityTransform
 import WhatIsThisGame.Entity
 import WhatIsThisGame.Data
 

@@ -9,8 +9,6 @@ module WhatIsThisGame.Entity ( entity
 import Control.Applicative
 import Control.Monad.Fix
 import FRP.Elerea.Param
-import Control.Lens
-import Linear.V2
 
 -------------------
 -- Local Imports --
@@ -21,8 +19,7 @@ import WhatIsThisGame.Data
 
 -- | The back-end for updating an @'Entity'@.
 entity' :: Entity -> Signal EntityTransform -> Signal Entity -> SignalGen Float (Signal Entity)
-entity' e set se = do
-  delay e $ set <*> se
+entity' e set se = delay e $ set <*> se
 
 -- | The front-end for updating an @'Entity'@.
 entity :: Entity -> Signal EntityTransform -> SignalGen Float (Signal Entity)
