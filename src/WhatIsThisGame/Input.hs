@@ -13,16 +13,16 @@ import Linear.V2
 -- Code --
 
 -- | Getting the render size of the window in the IO monad.
-ioRenderSize :: IO (V2 Float)
+ioRenderSize :: Fractional a => IO (V2 a)
 ioRenderSize =
   fmap convert $ get windowSize
-  where convert :: Size -> V2 Float
+  where convert :: Fractional a => Size -> V2 a
         convert (Size w h) =
           V2 (fromIntegral w / 640 * 100)
              (fromIntegral h / 640 * 100)
 
 -- | Getting the render size of the window in the Elerea network.
-renderSize :: SignalGen p (Signal (V2 Float))
+renderSize :: Fractional a => SignalGen p (Signal (V2 a))
 renderSize = effectful ioRenderSize
 
 -- | Checking if a key is held down in the IO monad.

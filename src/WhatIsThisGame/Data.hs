@@ -142,7 +142,7 @@ playerMoveSpeed = 0
 
 -- | The default height of the ground.
 groundHeight :: Float
-groundHeight = 1
+groundHeight = 10
 
 -- | Checking if an @'Entity'@ is dead.
 isDead :: Entity -> Bool

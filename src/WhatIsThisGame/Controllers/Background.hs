@@ -23,7 +23,7 @@ initialBackground :: Entity
 initialBackground =
   Entity { getName     = "res/background.png"
          , getPosition = V2   0 0
-         , getSize     = V2   7 4.9
+         , getSize     = V2   0 0
          , getHealth   = 0
          , shouldShoot = False
          }

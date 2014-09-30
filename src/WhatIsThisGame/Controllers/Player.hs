@@ -37,8 +37,8 @@ makeUpdate dt _ ss sp _ =
 initialPlayer :: Entity
 initialPlayer =
   Entity { getName     = "res/player.png"
-         , getPosition = V2 0.1 1
-         , getSize     = V2 0.6 0.9
+         , getPosition = V2 5 10
+         , getSize     = V2 20 30
          , getHealth   = 150
          , shouldShoot = False
          }

@@ -20,27 +20,29 @@ import Linear.V2
 
 -------------------
 -- Local Imports --
+import WhatIsThisGame.Input
 import WhatIsThisGame.Data
 
 ----------
 -- Code --
 
 -- | Scaling a coordinate to the window size.
-scaleCoord :: (Real a, Fractional b) => V2 a -> V2 b
-scaleCoord (V2 x y) =
-  V2 (realToFrac x / 640 * 100)
-     (realToFrac y / 480 * 100)
+scaleCoord :: (Real a, Fractional b) => V2 a -> IO (V2 b)
+scaleCoord (V2 x y) = do
+  (V2 w h) <- ioRenderSize
+  return $ V2 (realToFrac x / w)
+              (realToFrac y / h)
 
 -- | Binding a color.
 bindColor :: (App el GLSLColor ~ V4 GLfloat, Applicative f) => Color -> Rec el f '[GLSLColor]
 bindColor (Color c) = glslColor =: fmap realToFrac c
 
 -- | Generating a list of vertices for a quad based on a position and a size.
-generateVertices :: (Real a, Fractional b) => V2 a -> V2 a -> [V2 b]
-generateVertices p s =
-  V2 <$> [x, x + w] <*> [y, y + h]
-  where (V2 x y) = scaleCoord p
-        (V2 w h) = scaleCoord s
+generateVertices :: (Real a, Fractional b) => V2 a -> V2 a -> IO [V2 b]
+generateVertices p s = do
+  (V2 x y) <- scaleCoord p
+  (V2 w h) <- scaleCoord s
+  return $ V2 <$> [x, x + w] <*> [y, y + h]
 
 -- | Calculating the number of indices required for a list.
 calcIndices :: (Enum b, Num b) => Int -> [b]
@@ -65,7 +67,7 @@ renderSprites cm (Shader sp) rs = do
       ss  = map (\(SpriteRender         _  _ a) -> a) rs
       len = length rs
 
-  verts <- bufferVertices $ tileTex $ map (uncurry generateVertices) $ zip ps ss
+  verts <- mapM (uncurry generateVertices) (zip ps ss) >>= bufferVertices . tileTex
   eb    <- bufferIndices $ calcIndices len
   vao   <- makeVAO $ do
     enableVertices' sp verts
@@ -88,7 +90,7 @@ renderQuads cm (Shader sp) rs = do
       ss  = map (\(QuadRender _ _ a) -> a) rs
       len = length rs
 
-  verts <- bufferVertices $ calcQuad cs $ map (uncurry generateVertices) $ zip ps ss
+  verts <- mapM (uncurry generateVertices) (zip ps ss) >>= bufferVertices . calcQuad cs
   eb    <- bufferIndices $ calcIndices len
   vao   <- makeVAO $ do
     enableVertices' sp verts
