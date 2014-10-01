@@ -1,12 +1,18 @@
 -- | This module provides some tools to run through an @'Animation'@ in the
 --   scope of FRP and Haskell.
-module WhatIsThisGame.Animation (stepArray) where
+module WhatIsThisGame.Animation ( stepArray
+                                , animate
+                                ) where
 
 --------------------
 -- Global Imports --
 import Control.Applicative
 import Control.Monad.Fix
 import FRP.Elerea.Param
+
+-------------------
+-- Local Imports --
+import WhatIsThisGame.Data
 
 ----------
 -- Code --
@@ -53,3 +59,7 @@ stepArray' tgen list step =
 stepArray :: Bool -> [a] -> Float -> SignalGen Float (Signal a)
 stepArray False list step = stepArray' (accumTimeNoLoop                                  ) list step
 stepArray  True list step = stepArray' (accumTimeLoop (fromIntegral (length list) * step)) list step
+
+-- | Stepping through an animation at a given rate.
+animate :: Bool -> Animation -> Float -> SignalGen Float (Signal Sprite)
+animate loop (Animation list) step = stepArray loop list step
