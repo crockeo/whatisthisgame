@@ -24,9 +24,13 @@ import WhatIsThisGame.Data
 
 -- | Creating a @'WindowConfig'@ transform out of a 2-tuple of @'String'@s.
 makeTransform :: (String, String) -> (WindowConfig -> WindowConfig)
-makeTransform (     "width",      width) = \wc -> wc &      cfgWidth .~ read      width
-makeTransform (    "height",     height) = \wc -> wc &     cfgHeight .~ read     height
-makeTransform ("fullscreen", fullscreen) = \wc -> wc & cfgFullscreen .~ read fullscreen
+makeTransform (     "width",      width) = \wc -> wc &      cfgWidth .~         read        width
+makeTransform (    "height",     height) = \wc -> wc &     cfgHeight .~         read       height
+makeTransform ("fullscreen", fullscreen) = \wc -> wc & cfgFullscreen .~         read   fullscreen
+makeTransform (   "jumpkey",    jumpKey) = \wc -> wc &    cfgJumpKey .~ toEnum (read      jumpKey)
+makeTransform (  "shootkey",   shootKey) = \wc -> wc &   cfgShootKey .~ toEnum (read     shootKey)
+makeTransform (   "slowkey",    slowKey) = \wc -> wc &    cfgSlowKey .~ toEnum (read      slowKey)
+makeTransform (   "fastkey",    fastKey) = \wc -> wc &    cfgFastKey .~ toEnum (read      fastKey)
 makeTransform _ = id
 
 -- | Recovering from an error in loading a file.

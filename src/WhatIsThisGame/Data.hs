@@ -14,6 +14,7 @@ import Graphics.Rendering.OpenGL hiding ( Shader
                                         )
 
 import qualified Data.Map.Strict as Map
+import Graphics.UI.GLFW as GLFW
 import Data.Vinyl.Universe
 import Graphics.GLUtil
 import Linear.Matrix
@@ -30,13 +31,21 @@ import Linear.V2
 data WindowConfig = WindowConfig { _cfgWidth      :: Int
                                  , _cfgHeight     :: Int
                                  , _cfgFullscreen :: Bool
+                                 , _cfgJumpKey    :: Key
+                                 , _cfgShootKey   :: Key
+                                 , _cfgSlowKey    :: Key
+                                 , _cfgFastKey    :: Key
                                  }
 
 -- | Showing the @'WindowConfig'@ as a @'String'@.
 instance Show WindowConfig where
-  show wc = mconcat [      "width=", show $      _cfgWidth wc, "\n"
-                    ,     "height=", show $     _cfgHeight wc, "\n"
-                    , "fullscreen=", show $ _cfgFullscreen wc, "\n"
+  show wc = mconcat [      "width=", show $                 _cfgWidth wc, "\n"
+                    ,     "height=", show $                _cfgHeight wc, "\n"
+                    , "fullscreen=", show $            _cfgFullscreen wc, "\n"
+                    ,    "jumpkey=", show $ fromEnum $    _cfgJumpKey wc, "\n"
+                    ,   "shootkey=", show $ fromEnum $   _cfgShootKey wc, "\n"
+                    ,    "slowkey=", show $ fromEnum $    _cfgSlowKey wc, "\n"
+                    ,    "fastkey=", show $ fromEnum $    _cfgFastKey wc, "\n"
                     ]
 
 $(makeLenses ''WindowConfig)
@@ -46,6 +55,10 @@ defaultWindowConfig :: WindowConfig
 defaultWindowConfig = WindowConfig { _cfgWidth      = 640
                                    , _cfgHeight     = 480
                                    , _cfgFullscreen = False
+                                   , _cfgJumpKey    = CharKey ' '
+                                   , _cfgShootKey   = CharKey 'E'
+                                   , _cfgSlowKey    = CharKey 'A'
+                                   , _cfgFastKey    = CharKey 'D'
                                    }
 
 -- | The matrix of the camera.
