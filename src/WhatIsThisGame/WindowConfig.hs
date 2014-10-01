@@ -83,7 +83,6 @@ load path = do
 loadGuaranteed :: FilePath -> IO WindowConfig
 loadGuaranteed path = do
   ewc <- load path
-  print ewc
   either (const $ recover path) (return . id) ewc
 
 -- | Creating a @'Size'@ out of a @'WindowConfig'@.
