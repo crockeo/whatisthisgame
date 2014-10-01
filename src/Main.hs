@@ -27,6 +27,7 @@ main = do
   wc <- loadGuaranteed "config.cfg"
 
   initialize
+  openWindowHint NoResize True
   openWindow (makeSize wc)
              [DisplayRGBBits 8 8 8, DisplayAlphaBits 8, DisplayDepthBits 24]
              (makeWindowMode wc)
