@@ -2,6 +2,7 @@
 --   They're contained in one place so that recursive module imports may be
 --   avoided when only because of type definitions.
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
 module WhatIsThisGame.Data where
@@ -24,6 +25,28 @@ import Linear.V2
 
 ----------
 -- Code --
+
+-- | The data structure for window configuration.
+data WindowConfig = WindowConfig { _cfgWidth      :: Int
+                                 , _cfgHeight     :: Int
+                                 , _cfgFullscreen :: Bool
+                                 }
+
+-- | Showing the @'WindowConfig'@ as a @'String'@.
+instance Show WindowConfig where
+  show wc = mconcat [      "width=", show $      _cfgWidth wc, "\n"
+                    ,     "height=", show $     _cfgHeight wc, "\n"
+                    , "fullscreen=", show $ _cfgFullscreen wc, "\n"
+                    ]
+
+$(makeLenses ''WindowConfig)
+
+-- | The default @'WindowConfig'@.
+defaultWindowConfig :: WindowConfig
+defaultWindowConfig = WindowConfig { _cfgWidth      = 640
+                                   , _cfgHeight     = 480
+                                   , _cfgFullscreen = False
+                                   }
 
 -- | The matrix of the camera.
 type CamMatrix = PlainFieldRec '["cam" ::: M33 GLfloat]

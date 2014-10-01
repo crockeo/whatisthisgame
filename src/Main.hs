@@ -8,6 +8,7 @@ import Data.IORef
 
 -------------------
 -- Local Imports --
+import WhatIsThisGame.WindowConfig
 import WhatIsThisGame.Network
 import WhatIsThisGame.World
 
@@ -23,8 +24,12 @@ makeWindowCloseCallback closedRef = do
 -- | The entry point to the application.
 main :: IO ()
 main = do
+  wc <- loadGuaranteed "config.cfg"
+
   initialize
-  openWindow (Size 640 480) [DisplayRGBBits 8 8 8, DisplayAlphaBits 8, DisplayDepthBits 24] Window
+  openWindow (makeSize wc)
+             [DisplayRGBBits 8 8 8, DisplayAlphaBits 8, DisplayDepthBits 24]
+             (makeWindowMode wc)
   windowTitle $= "What is this game?"
 
   closedRef <- newIORef False

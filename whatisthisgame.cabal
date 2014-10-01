@@ -27,6 +27,8 @@ executable whatisthisgame
                ,       linear     == 1.10.1.2
                ,       containers == 0.5.5.1
                ,       lens       == 4.4.0.2
+               ,       directory  == 1.2.1.0
+               ,       parsec     == 3.1.7
                ,       OpenGL
 
   hs-source-dirs:      src/
