@@ -8,6 +8,7 @@ import Graphics.Rendering.OpenGL
 import Graphics.GLUtil.Camera2D
 import Graphics.UI.GLFW as GLFW
 import Data.Vinyl.Universe
+import Control.Concurrent
 import FRP.Elerea.Param
 import Data.Vinyl
 import Data.IORef
@@ -40,6 +41,7 @@ runNetwork' closedRef cam assets sfn = do
       performRender cm sp r
       swapBuffers
 
+      threadDelay 16666
       runNetwork' closedRef cam assets sfn
 
 -- | Running the network.
