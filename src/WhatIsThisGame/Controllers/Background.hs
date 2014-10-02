@@ -5,6 +5,7 @@ module WhatIsThisGame.Controllers.Background where
 -- Global Imports --
 import FRP.Elerea.Param
 import Control.Monad
+import Control.Lens
 import Linear.V2
 
 -------------------
@@ -30,7 +31,7 @@ initialBackground =
 backgroundController :: Signal World -> SignalGen Float (Signal EntityTransform)
 backgroundController _ = do
   ssize <- renderSize
-  return $ liftM (\size -> \e -> e { getSize = size }) ssize
+  return $ liftM (\size -> \e -> e { getSize = size & _x .~ (size ^. _x * 100) }) ssize
 
 -- | The front-end for the background.
 background :: Signal World -> SignalGen Float (Signal Entity)
