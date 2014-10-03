@@ -83,13 +83,13 @@ bounce spos = do
         bounce' pos h = pos < 0 || pos + (playerSize ^. _y) > h
 
 -- | The position in the y-axis.
-yPosition :: Signal Float -> SignalGen Float (Signal Float)
-yPosition spos = do
+yPosition :: Float -> Signal Float -> SignalGen Float (Signal Float)
+yPosition y spos = do
   ssize   <- renderSize
   sbounce <- bounce spos
   svel    <- mfix $ yVelocity sbounce
-  spos'   <- transfer2 (playerPosition ^. _y) yPosition' svel $ fmap (^. _y) ssize
-  delay (playerPosition ^. _y) $ spos'
+  spos'   <- transfer2 y yPosition' svel $ fmap (^. _y) ssize
+  delay y $ spos'
   where yPosition' :: Float -> Float -> Float -> Float -> Float
         yPosition' dt vel size pos =
           let pos' = pos + vel * dt in
@@ -115,24 +115,28 @@ makeUpdate pos skd =
           , shouldShoot = skd
           }
 
--- | The initial state of the player.
-initialPlayer :: Entity
-initialPlayer =
+-- | An alternate version of @'initialPlayer'@ that always centers the player.
+initialPlayer :: Float -> Entity
+initialPlayer y =
   Entity { getName     = "res/player.png"
-         , getPosition = playerPosition
+         , getPosition = V2 5 (y / 2)
          , getSize     = playerSize
          , getHealth   = 150
          , shouldShoot = False
          }
 
 -- | An alternate version of the @'playerController'@.
-playerController :: Signal World -> SignalGen Float (Signal EntityTransform)
-playerController _ = do
-  spos <- mfix yPosition
+playerController :: Float -> Signal World -> SignalGen Float (Signal EntityTransform)
+playerController y _ = do
+  spos <- mfix $ yPosition y
   sskd <- keyDown (CharKey ' ')
 
   return $ makeUpdate <$> spos <*> sskd
 
 -- | The composed player @'Entity'@ being run by the @'playerController'@.
 player :: Signal World -> SignalGen Float (Signal Entity)
-player w = playerController w >>= entity initialPlayer
+player w = do
+  y <- renderSize >>= (fmap calcPos . snapshot)
+  playerController y w >>= entity (initialPlayer y)
+  where calcPos :: V2 Float -> Float
+        calcPos (V2 _ h) = (h / 2) - (playerSize ^. _y / 2)
