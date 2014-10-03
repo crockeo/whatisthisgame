@@ -20,6 +20,10 @@ import WhatIsThisGame.Data
 ----------
 -- Code --
 
+-- | The starting position of the player.
+playerPosition :: V2 Float
+playerPosition = V2 5 30
+
 -- | The size of a player.
 playerSize :: V2 Float
 playerSize = V2 20 10
@@ -46,9 +50,9 @@ yAccel svel = do
   where yAccel' :: Bool -> Bool -> Float -> Float
         yAccel'  True False   _ =  playerAccelSpeed
         yAccel' False  True   _ = -playerAccelSpeed
-        yAccel'     _     _ vel
-          | vel < 0   =  playerAccelSpeed
-          | vel > 0   = -playerAccelSpeed
+        yAccel'   ukd   dkd vel
+          | vel < 0   = if ukd then  playerAccelSpeed * 2 else  playerAccelSpeed
+          | vel > 0   = if dkd then -playerAccelSpeed * 2 else -playerAccelSpeed
           | otherwise =  0
 
 -- | The velocity in the y-axis.
@@ -84,8 +88,8 @@ yPosition spos = do
   ssize   <- renderSize
   sbounce <- bounce spos
   svel    <- mfix $ yVelocity sbounce
-  spos'   <- transfer2 0 yPosition' svel $ fmap (^. _y) ssize
-  delay 0 $ spos'
+  spos'   <- transfer2 (playerPosition ^. _y) yPosition' svel $ fmap (^. _y) ssize
+  delay (playerPosition ^. _y) $ spos'
   where yPosition' :: Float -> Float -> Float -> Float -> Float
         yPosition' dt vel size pos =
           let pos' = pos + vel * dt in
@@ -105,17 +109,17 @@ calcSpeed False  True = playerMoveSpeed + playerMoveSpeed / 2
 calcSpeed  True False = playerMoveSpeed - playerMoveSpeed / 2
 
 -- | Constructing the function to transform an @'Entity'@.
-makeUpdate :: Float -> Bool -> Bool -> Float -> a -> EntityTransform
-makeUpdate dt _ ss sp _ =
-  \e -> e { getPosition = getPosition e & _x .~ getPosition e ^. _x + sp * dt
-          , shouldShoot = ss
+makeUpdate :: Float -> Bool -> EntityTransform
+makeUpdate pos skd =
+  \e -> e { getPosition = getPosition e & _y .~ pos
+          , shouldShoot = skd
           }
 
 -- | The initial state of the player.
 initialPlayer :: Entity
 initialPlayer =
   Entity { getName     = "res/player.png"
-         , getPosition = V2 5 10
+         , getPosition = playerPosition
          , getSize     = playerSize
          , getHealth   = 150
          , shouldShoot = False
@@ -125,7 +129,9 @@ initialPlayer =
 playerController :: Signal World -> SignalGen Float (Signal EntityTransform)
 playerController _ = do
   spos <- mfix yPosition
-  return $ fmap (\pos -> \e -> e { getPosition = getPosition e & _y .~ pos }) spos
+  sskd <- keyDown (CharKey ' ')
+
+  return $ makeUpdate <$> spos <*> sskd
 
 -- | The composed player @'Entity'@ being run by the @'playerController'@.
 player :: Signal World -> SignalGen Float (Signal Entity)
