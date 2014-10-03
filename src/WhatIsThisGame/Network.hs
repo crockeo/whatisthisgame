@@ -12,24 +12,15 @@ import Control.Concurrent
 import FRP.Elerea.Param
 import Data.Vinyl
 import Data.IORef
-import Linear.V2
 
 -------------------
 -- Local Imports --
 import WhatIsThisGame.Rendering
 import WhatIsThisGame.Assets
-import WhatIsThisGame.Input
 import WhatIsThisGame.Data
 
 ----------
 -- Code --
-
--- | Calculating the distance that the camera should track on a given udpate.
-trackDistance :: Float -> IO (V2 GLfloat)
-trackDistance dt = do
-  (V2 rw _) <- ioRenderSize
-  return $ V2 (realToFrac $ playerMoveSpeed * dt / (rw / 2))
-              0
 
 -- | The backend to running the network.
 runNetwork' :: Renderable a => IORef Bool -> Camera GLfloat -> Assets -> (Float -> IO a) -> IO ()
@@ -52,8 +43,7 @@ runNetwork' closedRef cam assets sfn = do
       swapBuffers
 
       threadDelay 16666
-      td <- trackDistance dt
-      runNetwork' closedRef (track td cam) assets sfn
+      runNetwork' closedRef cam assets sfn
 
 -- | Running the network.
 runNetwork :: Renderable a => IORef Bool -> SignalGen Float (Signal a) -> IO ()

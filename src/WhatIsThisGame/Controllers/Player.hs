@@ -6,6 +6,7 @@ module WhatIsThisGame.Controllers.Player where
 -- Global Imports --
 import Graphics.UI.GLFW as GLFW
 import Control.Applicative
+import Control.Monad.Fix
 import FRP.Elerea.Param
 import Control.Lens
 import Linear.V2
@@ -18,6 +19,83 @@ import WhatIsThisGame.Data
 
 ----------
 -- Code --
+
+-- | The size of a player.
+playerSize :: V2 Float
+playerSize = V2 20 10
+
+-- | The acceleration speed of the player.
+playerAccelSpeed :: Float
+playerAccelSpeed = 400
+
+-- | The maximum speed.
+maxSpeed :: Float
+maxSpeed = 100
+
+-- | The minimum speed.
+minSpeed :: Float
+minSpeed = playerAccelSpeed / 100
+
+-- | The acceleration in the y-axis.
+yAccel :: Signal Float -> SignalGen Float (Signal Float)
+yAccel svel = do
+  ukd <- keyDown (CharKey 'W')
+  dkd <- keyDown (CharKey 'S')
+
+  return $ yAccel' <$> ukd <*> dkd <*> svel
+  where yAccel' :: Bool -> Bool -> Float -> Float
+        yAccel'  True False   _ =  playerAccelSpeed
+        yAccel' False  True   _ = -playerAccelSpeed
+        yAccel'     _     _ vel
+          | vel < 0   =  playerAccelSpeed
+          | vel > 0   = -playerAccelSpeed
+          | otherwise =  0
+
+-- | The velocity in the y-axis.
+yVelocity :: Signal Bool -> Signal Float -> SignalGen Float (Signal Float)
+yVelocity sbounce svel = do
+  sacc  <- yAccel svel
+  svel' <- transfer2 0 yVelocity' sbounce sacc
+  delay 0 svel'
+  where yVelocity' :: Float -> Bool -> Float -> Float -> Float
+        yVelocity' dt b acc vel =
+          bound $ if b
+            then -vel / 1.5
+            else  vel + acc * dt
+
+        bound :: Float -> Float
+        bound vel
+          | vel >= -minSpeed && vel <= minSpeed =  0
+          | vel >   maxSpeed                    =  maxSpeed
+          | vel <  -maxSpeed                    = -maxSpeed
+          | otherwise                           =  vel
+
+-- | Checking if a position needs to be bounced.
+bounce :: Signal Float -> SignalGen p (Signal Bool)
+bounce spos = do
+  ssize <- renderSize
+  return $ bounce' <$> spos <*> fmap (^. _y) ssize
+  where bounce' :: Float -> Float -> Bool
+        bounce' pos h = pos < 0 || pos + (playerSize ^. _y) > h
+
+-- | The position in the y-axis.
+yPosition :: Signal Float -> SignalGen Float (Signal Float)
+yPosition spos = do
+  ssize   <- renderSize
+  sbounce <- bounce spos
+  svel    <- mfix $ yVelocity sbounce
+  spos'   <- transfer2 0 yPosition' svel $ fmap (^. _y) ssize
+  delay 0 $ spos'
+  where yPosition' :: Float -> Float -> Float -> Float -> Float
+        yPosition' dt vel size pos =
+          let pos' = pos + vel * dt in
+            bound pos' size
+
+        bound :: Float -> Float -> Float
+        bound pos size
+          | pos                      <    0 = 0
+          | pos + (playerSize ^. _y) > size = size - (playerSize ^. _y)
+          | otherwise                       = pos
 
 -- | Calculating the speed of the player.
 calcSpeed :: Bool -> Bool -> Float
@@ -38,7 +116,7 @@ initialPlayer :: Entity
 initialPlayer =
   Entity { getName     = "res/player.png"
          , getPosition = V2 5 10
-         , getSize     = V2 20 30
+         , getSize     = playerSize
          , getHealth   = 150
          , shouldShoot = False
          }
@@ -46,13 +124,8 @@ initialPlayer =
 -- | An alternate version of the @'playerController'@.
 playerController :: Signal World -> SignalGen Float (Signal EntityTransform)
 playerController _ = do
-  jkd <- keyDown (CharKey ' ')
-  skd <- keyDown (CharKey 'E')
-  lkd <- keyDown (CharKey 'A')
-  rkd <- keyDown (CharKey 'D')
-  let spd = calcSpeed <$> lkd <*> rkd
-
-  transfer3 id makeUpdate jkd skd spd
+  spos <- mfix yPosition
+  return $ fmap (\pos -> \e -> e { getPosition = getPosition e & _y .~ pos }) spos
 
 -- | The composed player @'Entity'@ being run by the @'playerController'@.
 player :: Signal World -> SignalGen Float (Signal Entity)
