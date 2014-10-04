@@ -61,5 +61,12 @@ stepArray False list step = stepArray' (accumTimeNoLoop                         
 stepArray  True list step = stepArray' (accumTimeLoop (fromIntegral (length list) * step)) list step
 
 -- | Stepping through an animation at a given rate.
-animate :: Bool -> Animation -> Float -> SignalGen Float (Signal Sprite)
+animate :: Bool -> Animation -> Float -> SignalGen Float (Signal String)
 animate loop (Animation list) step = stepArray loop list step
+
+-- | Creating an entity transform to set the sprite to the current sprite in
+--   the animation.
+animateTransform :: Bool -> Animation -> Float -> SignalGen Float (Signal EntityTransform)
+animateTransform loop anim step = do
+  sframe <- animate loop anim step
+  return $ fmap (\frame -> \e -> { getName = frame }) sframe

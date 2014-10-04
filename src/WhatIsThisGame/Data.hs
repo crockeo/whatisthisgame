@@ -101,7 +101,7 @@ newtype Sprite = Sprite TextureObject
 
 -- | A data structure to represent an animation. In other words, a list of
 --   @'Sprite'@s.
-newtype Animation = Animation [Sprite]
+newtype Animation = Animation [String]
 
 -- | A data structure to represent a shader.
 newtype Shader = Shader ShaderProgram
