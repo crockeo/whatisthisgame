@@ -1,4 +1,6 @@
-module Compose where
+-- | This module provides functions to compose functions generated from
+--   @'Signal'@s and @'SignalGen'@s.
+module WhatIsThisGame.Utils.Compose where
 
 --------------------
 -- Global Imports --
@@ -9,7 +11,7 @@ import FRP.Elerea.Param
 -- Code --
 
 -- | Running @'(.)'@ on a function contained within a @'Signal'@.
-(!.) :: Signal (b -> c) -> Signal (a -> b) -> Signal (a -> b)
+(!.) :: Signal (b -> c) -> Signal (a -> b) -> Signal (a -> c)
 (!.) s1 s2 = (.) <$> s1 <*> s2
 
 -- | Running @'(.)'@ on a function contained within a @'SignalGen'@.

@@ -2,6 +2,7 @@
 --   scope of FRP and Haskell.
 module WhatIsThisGame.Animation ( stepArray
                                 , animate
+                                , animateTransform
                                 ) where
 
 --------------------
@@ -69,4 +70,4 @@ animate loop (Animation list) step = stepArray loop list step
 animateTransform :: Bool -> Animation -> Float -> SignalGen Float (Signal EntityTransform)
 animateTransform loop anim step = do
   sframe <- animate loop anim step
-  return $ fmap (\frame -> \e -> { getName = frame }) sframe
+  return $ fmap (\frame -> \e -> e { getName = frame }) sframe
