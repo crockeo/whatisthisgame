@@ -127,13 +127,17 @@ initialPlayer y =
          , shouldShoot = False
          }
 
--- | An alternate version of the @'playerController'@.
-playerController :: Float -> Signal World -> SignalGen Float (Signal EntityTransform)
-playerController y _ = do
-  spos <- mfix $ yPosition y
+-- | Making the player react to whether or not it should shoot.
+shootPlayer :: SignalGen Float (Signal EntityTransform)
+shootPlayer = do
   sskd <- keyDown (CharKey ' ')
+  return $ fmap (\skd -> \e -> e { shouldShoot = skd }) sskd
 
-  return $ makeUpdate <$> spos <*> sskd
+-- | Moving the palyer.
+movePlayer :: Float -> SignalGen Float (Signal EntityTransform)
+movePlayer y = do
+  spos <- mfix $ yPosition y
+  return $ fmap (\pos -> \e -> e { getPosition = getPosition e & _y .~ pos }) spos
 
 -- | The transform to animate the player.
 animatePlayer :: SignalGen Float (Signal EntityTransform)
@@ -145,10 +149,16 @@ animatePlayer =
                               , "res/player/04.png"
                               ]
 
+-- | The controller for the player.
+playerController :: Float -> SignalGen Float (Signal EntityTransform)
+playerController y   = shootPlayer
+                   !!. movePlayer y
+                   !!. animatePlayer
+
 -- | The composed player @'Entity'@ being run by the @'playerController'@.
 player :: Signal World -> SignalGen Float (Signal Entity)
-player w = do
+player _ = do
   y <- renderSize >>= (fmap calcPos . snapshot)
-  (animatePlayer !!. playerController y w) >>= entity (initialPlayer y)
+  playerController y >>= entity (initialPlayer y)
   where calcPos :: V2 Float -> Float
         calcPos (V2 _ h) = (h / 2) - (playerSize ^. _y / 2)
