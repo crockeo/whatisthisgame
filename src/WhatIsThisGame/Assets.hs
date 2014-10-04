@@ -42,7 +42,12 @@ loadAssets =
   performLoad $ mconcat
     [ ShaderLoad "res/game2d"
     , ShaderLoad "res/color"
-    , SpriteLoad "res/player.png"
+
+    , SpriteLoad "res/player/01.png"
+    , SpriteLoad "res/player/02.png"
+    , SpriteLoad "res/player/03.png"
+    , SpriteLoad "res/player/04.png"
+
     , SpriteLoad "res/background.png"
     , SpriteLoad "res/bullet.png"
     ]

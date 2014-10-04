@@ -13,6 +13,8 @@ import Linear.V2
 
 -------------------
 -- Local Imports --
+import WhatIsThisGame.Utils.Compose
+import WhatIsThisGame.Animation
 import WhatIsThisGame.Entity
 import WhatIsThisGame.Input
 import WhatIsThisGame.Data
@@ -118,7 +120,7 @@ makeUpdate pos skd =
 -- | An alternate version of @'initialPlayer'@ that always centers the player.
 initialPlayer :: Float -> Entity
 initialPlayer y =
-  Entity { getName     = "res/player.png"
+  Entity { getName     = "res/player/01.png"
          , getPosition = V2 5 (y / 2)
          , getSize     = playerSize
          , getHealth   = 150
@@ -133,10 +135,20 @@ playerController y _ = do
 
   return $ makeUpdate <$> spos <*> sskd
 
+-- | The transform to animate the player.
+animatePlayer :: SignalGen Float (Signal EntityTransform)
+animatePlayer =
+  animateTransform True animation 0.1
+  where animation = Animation [ "res/player/01.png"
+                              , "res/player/02.png"
+                              , "res/player/03.png"
+                              , "res/player/04.png"
+                              ]
+
 -- | The composed player @'Entity'@ being run by the @'playerController'@.
 player :: Signal World -> SignalGen Float (Signal Entity)
 player w = do
   y <- renderSize >>= (fmap calcPos . snapshot)
-  playerController y w >>= entity (initialPlayer y)
+  (animatePlayer !!. playerController y w) >>= entity (initialPlayer y)
   where calcPos :: V2 Float -> Float
         calcPos (V2 _ h) = (h / 2) - (playerSize ^. _y / 2)
