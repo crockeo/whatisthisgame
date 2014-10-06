@@ -14,7 +14,7 @@ extra-source-files:  README.md
 cabal-version:       >=1.10
 
 executable whatisthisgame
-  ghc-options:         -Wall -fno-warn-unused-do-bind
+  ghc-options:         -O2 -Wall -fno-warn-unused-do-bind
 
   main-is:             Main.hs
 
