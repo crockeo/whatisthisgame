@@ -13,6 +13,7 @@ import Linear.V2
 
 -------------------
 -- Local Imports --
+import WhatIsThisGame.Utils.Compose
 import WhatIsThisGame.Animation
 import WhatIsThisGame.Entity
 import WhatIsThisGame.Input
@@ -66,10 +67,7 @@ yAccel  =  mkSF_ decel              . keyDown (CharKey 'W') . keyDown (CharKey '
        <|> pure (-playerAccelSpeed) . keyDown (CharKey 'S')
        <|> mkSF_ decel
   where decel :: Float -> Float
-        decel v
-          | v < 0     =  playerAccelSpeed
-          | v > 0     = -playerAccelSpeed
-          | otherwise = 0
+        decel v = -v * 2
 
 -- | The velocity in the y-axis.
 yVelocity :: HasTime t s => Float -> Wire s e IO (Float, Bool) Float
@@ -105,11 +103,11 @@ yPosition iy =
             then closer y 0 h
             else y + dt * v
 
-        closer :: (Ord a, Num a) => a -> a -> a -> a
+        closer :: Float -> Float -> Float -> Float
         closer a t1 t2 =
           snd $ max d1 d2
-          where d1 = (abs (t1 - a), t2)
-                d2 = (abs (t2 - a), t2)
+          where d1 = (abs $ t1 - a, t1                   )
+                d2 = (abs $ t2 - a, t2 - playerSize ^. _y)
 
 -- | Making the player shoot.
 shootPlayer :: Monoid e => Wire s e IO a EntityTransform
@@ -131,99 +129,19 @@ animatePlayer =
 -- | The transform for moving the player.
 movePlayer :: (HasTime t s, Monoid e) => Float -> Wire s e IO a EntityTransform
 movePlayer iy =
-  movePlayer' . fmap (^. _y) renderSize
-  where movePlayer' :: (HasTime t s, Monoid e) => Wire s e IO Float EntityTransform
-        movePlayer' =
-          proc h -> do
-            rec a <- yAccel       -< v
-                v <- yVelocity 0  -< (a, b)
-                p <- yPosition iy -< (v, h, b)
-                b <- bounce       -< p
-
-            et <- movePlayer'' -< p
-
-            returnA -< et
-
-        movePlayer'' :: Wire s e IO Float EntityTransform
-        movePlayer'' =
-          mkSF_ $ \y ->
-            \e -> e { getPosition = getPosition e & _y .~ y }
+  proc _ -> do
+    h <- fmap (^. _y) renderSize -< undefined
+    rec a <- yAccel                  -< v
+        v <- delay 0 . yVelocity 0   -< (a, b)
+        p <- yPosition iy            -< (v, h, b)
+        b <- delay False . bounce    -< p
+    returnA -< \e -> e { getPosition = getPosition e & _y .~ p }
 
 -- | The actual player itself.
 playerController :: (HasTime t s, Monoid e) => Wire s e IO World EntityTransform
-playerController =
-  proc w -> do
-    sp <- shootPlayer   -< w
-    ap <- animatePlayer -< w
-    mp <- movePlayer 30 -< w
-
-    returnA -< foldl1 (.) [ sp
-                          , ap
-                          , mp
-                          ]
+playerController  = shootPlayer
+                 !. animatePlayer
+                 !. movePlayer 30
 
 player :: (HasTime t s, Monoid e) => Wire s e IO World Entity
 player = entity (initialPlayer 30) . playerController
-
-{-
-
--- | The position in the y-axis.
-yPosition :: Float -> Signal Float -> SignalGen Float (Signal Float)
-yPosition y spos = do
-  ssize   <- renderSize
-  sbounce <- bounce spos
-  svel    <- mfix $ yVelocity sbounce
-  spos'   <- transfer2 y yPosition' svel $ fmap (^. _y) ssize
-  delay y $ spos'
-  where yPosition' :: Float -> Float -> Float -> Float -> Float
-        yPosition' dt vel size pos =
-          let pos' = pos + vel * dt in
-            bound pos' size
-
-        bound :: Float -> Float -> Float
-        bound pos size
-          | pos                      <    0 = 0
-          | pos + (playerSize ^. _y) > size = size - (playerSize ^. _y)
-          | otherwise                       = pos
-
--- | Calculating the speed of the player.
-calcSpeed :: Bool -> Bool -> Float
-calcSpeed False False = playerMoveSpeed
-calcSpeed  True  True = playerMoveSpeed
-calcSpeed False  True = playerMoveSpeed + playerMoveSpeed / 2
-calcSpeed  True False = playerMoveSpeed - playerMoveSpeed / 2
-
--- | Constructing the function to transform an @'Entity'@.
-makeUpdate :: Float -> Bool -> EntityTransform
-makeUpdate pos skd =
-  \e -> e { getPosition = getPosition e & _y .~ pos
-          , shouldShoot = skd
-          }
-
--- | Making the player react to whether or not it should shoot.
-shootPlayer :: SignalGen Float (Signal EntityTransform)
-shootPlayer = do
-  sskd <- keyDown (CharKey ' ')
-  return $ fmap (\skd -> \e -> e { shouldShoot = skd }) sskd
-
--- | Moving the palyer.
-movePlayer :: Float -> SignalGen Float (Signal EntityTransform)
-movePlayer y = do
-  spos <- mfix $ yPosition y
-  return $ fmap (\pos -> \e -> e { getPosition = getPosition e & _y .~ pos }) spos
-
--- | The controller for the player.
-playerController :: Float -> SignalGen Float (Signal EntityTransform)
-playerController y   = shootPlayer
-                   !!. movePlayer y
-                   !!. animatePlayer
-
--- | The composed player @'Entity'@ being run by the @'playerController'@.
-player :: Signal World -> SignalGen Float (Signal Entity)
-player _ = do
-  y <- renderSize >>= (fmap calcPos . snapshot)
-  playerController y >>= entity (initialPlayer y)
-  where calcPos :: V2 Float -> Float
-        calcPos (V2 _ h) = (h / 2) - (playerSize ^. _y / 2)
-
--}
