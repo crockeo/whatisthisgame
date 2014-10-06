@@ -9,7 +9,7 @@ import Graphics.GLUtil.Camera2D
 import Graphics.UI.GLFW as GLFW
 import Data.Vinyl.Universe
 import Control.Concurrent
-import FRP.Elerea.Param
+import Control.Wire
 import Data.Vinyl
 import Data.IORef
 
@@ -23,33 +23,33 @@ import WhatIsThisGame.Data
 -- Code --
 
 -- | The backend to running the network.
-runNetwork' :: Renderable a => IORef Bool -> Camera GLfloat -> Assets -> (Float -> IO a) -> IO ()
-runNetwork' closedRef cam assets sfn = do
+runNetwork' :: Renderable b => IORef Bool -> Camera GLfloat -> Assets -> Session IO (Timed NominalDiffTime ()) -> Wire (Timed NominalDiffTime ()) e IO a b -> IO ()
+runNetwork' closedRef cam assets session wire = do
   closed <- readIORef closedRef
   if closed
     then return ()
     else do
-      dt <- fmap realToFrac $ get GLFW.time
-      GLFW.time $= 0
-      a <- sfn dt
+      (st, session') <- stepSession session
+      (wt, wire'   ) <- stepWire    wire st $ Right undefined
 
-      let cm = (SField =: camMatrix cam)
-          sp = (getShaders assets ! "res/game2d", getShaders assets ! "res/color")
-          r  = render assets a
+      case wt of
+        Left  _ -> return ()
+        Right w -> do
+          let cm = (SField =: camMatrix cam)
+              sp = (getShaders assets ! "res/game2d", getShaders assets ! "res/color")
+              r  = render assets w
 
+          clear [ColorBuffer, DepthBuffer]
+          performRender cm sp r
+          swapBuffers
 
-      clear [ColorBuffer, DepthBuffer]
-      performRender cm sp r
-      swapBuffers
-
-      threadDelay 16666
-      runNetwork' closedRef cam assets sfn
+          threadDelay 16666
+          runNetwork' closedRef cam assets session' wire'
 
 -- | Running the network.
-runNetwork :: Renderable a => IORef Bool -> SignalGen Float (Signal a) -> IO ()
-runNetwork closedRef sg = do
+runNetwork :: Renderable b => IORef Bool -> Wire (Timed NominalDiffTime ()) e IO a b -> IO ()
+runNetwork closedRef wire = do
   assets <- loadAssets
-  sfn    <- start sg
 
   GLFW.time $= 0
-  runNetwork' closedRef camera2D assets sfn
+  runNetwork' closedRef camera2D assets clockSession_ wire

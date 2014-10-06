@@ -3,9 +3,10 @@ module WhatIsThisGame.Controllers.Background where
 
 --------------------
 -- Global Imports --
-import FRP.Elerea.Param
+import Prelude hiding ((.))
 import Control.Monad
 import Control.Lens
+import Control.Wire
 import Linear.V2
 
 -------------------
@@ -28,11 +29,14 @@ initialBackground =
          }
 
 -- | The controller that generates the transform each update.
-backgroundController :: Signal World -> SignalGen Float (Signal EntityTransform)
-backgroundController _ = do
-  ssize <- renderSize
-  return $ liftM (\size -> \e -> e { getSize = size & _x .~ (size ^. _x * 100) }) ssize
+backgroundController :: Wire s e IO World EntityTransform
+backgroundController =
+  backgroundController' . renderSize
+  where backgroundController' :: Wire s e IO (V2 Float) EntityTransform
+        backgroundController' =
+          mkSF_ $ \size ->
+            \e -> e { getSize = size & _x .~ (size ^. _x * 100) }
 
 -- | The front-end for the background.
-background :: Signal World -> SignalGen Float (Signal Entity)
-background w = backgroundController w >>= entity initialBackground
+background :: Wire s e IO World Entity
+background = entity initialBackground . backgroundController

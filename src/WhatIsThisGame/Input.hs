@@ -6,7 +6,7 @@ module WhatIsThisGame.Input where
 -- Global Imports --
 import Graphics.Rendering.OpenGL
 import Graphics.UI.GLFW as GLFW
-import FRP.Elerea.Param
+import Control.Wire
 import Linear.V2
 
 ----------
@@ -22,17 +22,17 @@ ioRenderSize =
              (fromIntegral h / 640 * 100)
 
 -- | Getting the render size of the window in the Elerea network.
-renderSize :: Fractional a => SignalGen p (Signal (V2 a))
-renderSize = effectful ioRenderSize
-
--- | Checking if a key is held down in the IO monad.
-ioKeyDown :: Enum k => k -> IO Bool
-ioKeyDown k = do
-  s <- getKey k
-  return $ case s of
-    Release -> False
-    Press   -> True
+renderSize :: Fractional b => Wire s e IO a (V2 b)
+renderSize =
+  mkGen_ $ \_ -> do
+    rs <- ioRenderSize
+    return $ Right rs
 
 -- | Getting the render size of the window in the Elerea network.
-keyDown :: Enum k => k -> SignalGen p (Signal Bool)
-keyDown = effectful . ioKeyDown
+keyDown :: (Enum k, Monoid e) => k -> Wire s e IO a a
+keyDown k =
+  mkGen_ $ \a -> do
+    k <- getKey k
+    return $ case k of
+      Release -> Left  mempty
+      Press   -> Right a

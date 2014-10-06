@@ -1,12 +1,11 @@
 -- | This module provides the logic for constructing and rendering the game
 --   world.
+{-# LANGUAGE Arrows #-}
 module WhatIsThisGame.World where
 
 --------------------
 -- Global Imports --
-import Control.Applicative
-import Control.Monad.Fix
-import FRP.Elerea.Param
+import Control.Wire
 import Data.Monoid
 
 -------------------
@@ -27,18 +26,21 @@ instance Renderable World where
 initialWorld :: World
 initialWorld = World []
 
--- | Providing the back-end to the @'world'@ function.
-world' :: Signal World -> SignalGen Float (Signal World)
-world' w = do
-  b <- background w
-  p <- player w
+-- | Updating the world.
+world' :: (HasTime t s, Monoid e) => Wire s e IO World World
+world' =
+  proc w -> do
+    b <- background -< w
+    p <- player     -< w
 
-  let l = sequence [ b
-                   , p
-                   ]
+    returnA -< makeWorld b p
+  where makeWorld :: Entity -> Entity -> World
+        makeWorld b p =
+          World $ [b, p]
 
-  delay initialWorld $ World <$> l
-
--- | Providing an always-updated @'World'@.
-world :: SignalGen Float (Signal World)
-world = mfix world'
+-- | The front-end for the world.
+world :: HasTime t s => Wire s () IO a World
+world =
+  proc _ -> do
+    rec w <- world' -< w
+    returnA -< w

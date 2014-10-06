@@ -1,19 +1,18 @@
 -- | This module provides a controller for running an entity to represent a
 --   player within the game world.
+{-# LANGUAGE Arrows #-}
 module WhatIsThisGame.Controllers.Player where
 
 --------------------
 -- Global Imports --
 import Graphics.UI.GLFW as GLFW
-import Control.Applicative
-import Control.Monad.Fix
-import FRP.Elerea.Param
+import Prelude hiding ((.), id)
 import Control.Lens
+import Control.Wire
 import Linear.V2
 
 -------------------
 -- Local Imports --
-import WhatIsThisGame.Utils.Compose
 import WhatIsThisGame.Animation
 import WhatIsThisGame.Entity
 import WhatIsThisGame.Input
@@ -21,6 +20,16 @@ import WhatIsThisGame.Data
 
 ----------
 -- Code --
+
+-- | The initial state that the player should take.
+initialPlayer :: Float -> Entity
+initialPlayer y =
+  Entity { getName     = "res/player/01.png"
+         , getPosition = V2 5 y
+         , getSize     = playerSize
+         , getHealth   = 150
+         , shouldShoot = False
+         }
 
 -- | The starting position of the player.
 playerPosition :: V2 Float
@@ -42,47 +51,113 @@ maxSpeed = 100
 minSpeed :: Float
 minSpeed = playerAccelSpeed / 100
 
--- | The acceleration in the y-axis.
-yAccel :: Signal Float -> SignalGen Float (Signal Float)
-yAccel svel = do
-  ukd <- keyDown (CharKey 'W')
-  dkd <- keyDown (CharKey 'S')
+-- | Checking if the player should bounce.
+bounce :: Wire s e IO Float Bool
+bounce =
+  mkSF_ bounce' . liftA2 (,) mkId (fmap (^. _y) renderSize)
+  where bounce' :: (Float, Float) -> Bool
+        bounce' (y, h) =
+          y < 0 || y + (playerSize ^. _y) > h
 
-  return $ yAccel' <$> ukd <*> dkd <*> svel
-  where yAccel' :: Bool -> Bool -> Float -> Float
-        yAccel'  True False   _ =  playerAccelSpeed
-        yAccel' False  True   _ = -playerAccelSpeed
-        yAccel'   ukd   dkd vel
-          | vel < 0   = if ukd then  playerAccelSpeed * 2 else  playerAccelSpeed
-          | vel > 0   = if dkd then -playerAccelSpeed * 2 else -playerAccelSpeed
-          | otherwise =  0
+-- | The acceleration in the y-axis.
+yAccel :: Monoid e => Wire s e IO Float Float
+yAccel  =  mkSF_ decel              . keyDown (CharKey 'W') . keyDown (CharKey 'S')
+       <|> pure ( playerAccelSpeed) . keyDown (CharKey 'W')
+       <|> pure (-playerAccelSpeed) . keyDown (CharKey 'S')
+       <|> mkSF_ decel
+  where decel :: Float -> Float
+        decel v
+          | v < 0     =  playerAccelSpeed
+          | v > 0     = -playerAccelSpeed
+          | otherwise = 0
 
 -- | The velocity in the y-axis.
-yVelocity :: Signal Bool -> Signal Float -> SignalGen Float (Signal Float)
-yVelocity sbounce svel = do
-  sacc  <- yAccel svel
-  svel' <- transfer2 0 yVelocity' sbounce sacc
-  delay 0 svel'
-  where yVelocity' :: Float -> Bool -> Float -> Float -> Float
-        yVelocity' dt b acc vel =
-          bound $ if b
-            then -vel / 1.5
-            else  vel + acc * dt
+yVelocity :: HasTime t s => Float -> Wire s e IO (Float, Bool) Float
+yVelocity iv =
+  mkSF $ \ds (a, b) ->
+    let dt = realToFrac $ dtime ds
+        v = acc dt iv a b in
+      v `seq` (iv, yVelocity v)
+  where acc :: Float -> Float -> Float -> Bool -> Float
+        acc dt v a b =
+          if b
+            then -v / 1.5
+            else bound $ v + a * dt
 
         bound :: Float -> Float
-        bound vel
-          | vel >= -minSpeed && vel <= minSpeed =  0
-          | vel >   maxSpeed                    =  maxSpeed
-          | vel <  -maxSpeed                    = -maxSpeed
-          | otherwise                           =  vel
+        bound v
+          | v < -maxSpeed = -maxSpeed
+          | v >  maxSpeed =  maxSpeed
 
--- | Checking if a position needs to be bounced.
-bounce :: Signal Float -> SignalGen p (Signal Bool)
-bounce spos = do
-  ssize <- renderSize
-  return $ bounce' <$> spos <*> fmap (^. _y) ssize
-  where bounce' :: Float -> Float -> Bool
-        bounce' pos h = pos < 0 || pos + (playerSize ^. _y) > h
+
+-- | The position in the y-axis.
+yPosition :: HasTime t s => Float -> Wire s e IO (Float, Float, Bool) Float
+yPosition iy =
+  mkSF $ \ds (v, h, b) ->
+    let dt = realToFrac $ dtime ds
+        y = move dt iy h v b in
+      y `seq` (iy, yPosition y)
+  where move :: Float -> Float -> Float -> Float -> Bool -> Float
+        move dt y h v b =
+          if b
+            then closer y 0 h
+            else y + dt * v
+
+        closer :: (Ord a, Num a) => a -> a -> a -> a
+        closer a t1 t2 =
+          snd $ max d1 d2
+          where d1 = (abs (t1 - a), t2)
+                d2 = (abs (t2 - a), t2)
+
+-- | Making the player shoot.
+shootPlayer :: Monoid e => Wire s e IO a EntityTransform
+shootPlayer  =  pure   shoot . keyDown (CharKey ' ')
+            <|> pure unshoot
+  where shoot   = \e -> e { shouldShoot = True  }
+        unshoot = \e -> e { shouldShoot = False }
+
+-- | Animating the player.
+animatePlayer :: Wire s e IO a EntityTransform
+animatePlayer = pure id
+
+-- | The transform for moving the player.
+movePlayer :: (HasTime t s, Monoid e) => Float -> Wire s e IO a EntityTransform
+movePlayer iy =
+  movePlayer' . fmap (^. _y) renderSize
+  where movePlayer' :: (HasTime t s, Monoid e) => Wire s e IO Float EntityTransform
+        movePlayer' =
+          proc h -> do
+            rec a <- yAccel       -< v
+                v <- yVelocity 0  -< (a, b)
+                p <- yPosition iy -< (v, h, b)
+                b <- bounce       -< p
+
+            et <- movePlayer'' -< p
+
+            returnA -< et
+
+        movePlayer'' :: Wire s e IO Float EntityTransform
+        movePlayer'' =
+          mkSF_ $ \y ->
+            \e -> e { getPosition = getPosition e & _y .~ y }
+
+-- | The actual player itself.
+playerController :: (HasTime t s, Monoid e) => Wire s e IO World EntityTransform
+playerController =
+  proc w -> do
+    sp <- shootPlayer   -< w
+    ap <- animatePlayer -< w
+    mp <- movePlayer 30 -< w
+
+    returnA -< foldl1 (.) [ sp
+                          , ap
+                          , mp
+                          ]
+
+player :: (HasTime t s, Monoid e) => Wire s e IO World Entity
+player = entity (initialPlayer 30) . playerController
+
+{-
 
 -- | The position in the y-axis.
 yPosition :: Float -> Signal Float -> SignalGen Float (Signal Float)
@@ -116,16 +191,6 @@ makeUpdate pos skd =
   \e -> e { getPosition = getPosition e & _y .~ pos
           , shouldShoot = skd
           }
-
--- | An alternate version of @'initialPlayer'@ that always centers the player.
-initialPlayer :: Float -> Entity
-initialPlayer y =
-  Entity { getName     = "res/player/01.png"
-         , getPosition = V2 5 (y / 2)
-         , getSize     = playerSize
-         , getHealth   = 150
-         , shouldShoot = False
-         }
 
 -- | Making the player react to whether or not it should shoot.
 shootPlayer :: SignalGen Float (Signal EntityTransform)
@@ -162,3 +227,5 @@ player _ = do
   playerController y >>= entity (initialPlayer y)
   where calcPos :: V2 Float -> Float
         calcPos (V2 _ h) = (h / 2) - (playerSize ^. _y / 2)
+
+-}
