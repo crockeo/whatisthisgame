@@ -86,8 +86,10 @@ yVelocity iv =
 
         bound :: Float -> Float
         bound v
-          | v < -maxSpeed = -maxSpeed
-          | v >  maxSpeed =  maxSpeed
+          | v < -maxSpeed                 = -maxSpeed
+          | v >  maxSpeed                 =  maxSpeed
+          | v > -minSpeed && v < minSpeed =  0
+          | otherwise                     =  v
 
 
 -- | The position in the y-axis.
