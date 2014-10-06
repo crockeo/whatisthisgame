@@ -21,6 +21,7 @@ executable whatisthisgame
   build-depends:       base       == 4.7.*
                ,       GLFW       == 0.5.2.2
                ,       elerea     == 2.7.0.2
+               ,       netwire    == 5.0.0
                ,       GLUtil     == 0.8.2
                ,       vinyl-gl   == 0.2.1
                ,       vinyl      == 0.4.3
