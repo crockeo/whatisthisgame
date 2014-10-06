@@ -137,11 +137,12 @@ movePlayer iy =
         b <- delay False . bounce    -< p
     returnA -< \e -> e { getPosition = getPosition e & _y .~ p }
 
--- | The actual player itself.
+-- | The player controller.
 playerController :: (HasTime t s, Monoid e) => Wire s e IO World EntityTransform
 playerController  = shootPlayer
                  !. animatePlayer
                  !. movePlayer 30
 
+-- | The actual player itself.
 player :: (HasTime t s, Monoid e) => Wire s e IO World Entity
 player = entity (initialPlayer 30) . playerController
