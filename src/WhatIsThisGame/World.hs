@@ -5,6 +5,7 @@ module WhatIsThisGame.World where
 
 --------------------
 -- Global Imports --
+import Prelude hiding ((.))
 import Control.Wire
 import Data.Monoid
 
@@ -29,11 +30,12 @@ initialWorld = World []
 -- | Updating the world.
 world' :: (HasTime t s, Monoid e) => Wire s e IO World World
 world' =
-  proc w -> do
-    b <- background -< w
-    p <- player     -< w
+  (proc w -> do
+     b <- background -< w
+     p <- player     -< w
 
-    returnA -< makeWorld b p
+
+     returnA -< makeWorld b p) . delay initialWorld
   where makeWorld :: Entity -> Entity -> World
         makeWorld b p =
           World $ [b, p]
