@@ -118,9 +118,15 @@ shootPlayer  =  pure   shoot . keyDown (CharKey ' ')
   where shoot   = \e -> e { shouldShoot = True  }
         unshoot = \e -> e { shouldShoot = False }
 
--- | Animating the player.
-animatePlayer :: Wire s e IO a EntityTransform
-animatePlayer = pure id
+-- | The transform to animate the player.
+animatePlayer :: HasTime t s => Wire s e IO a EntityTransform
+animatePlayer =
+  animateTransform True animation 0.1
+  where animation = Animation [ "res/player/01.png"
+                              , "res/player/02.png"
+                              , "res/player/03.png"
+                              , "res/player/04.png"
+                              ]
 
 -- | The transform for moving the player.
 movePlayer :: (HasTime t s, Monoid e) => Float -> Wire s e IO a EntityTransform
@@ -205,16 +211,6 @@ movePlayer :: Float -> SignalGen Float (Signal EntityTransform)
 movePlayer y = do
   spos <- mfix $ yPosition y
   return $ fmap (\pos -> \e -> e { getPosition = getPosition e & _y .~ pos }) spos
-
--- | The transform to animate the player.
-animatePlayer :: SignalGen Float (Signal EntityTransform)
-animatePlayer =
-  animateTransform True animation 0.1
-  where animation = Animation [ "res/player/01.png"
-                              , "res/player/02.png"
-                              , "res/player/03.png"
-                              , "res/player/04.png"
-                              ]
 
 -- | The controller for the player.
 playerController :: Float -> SignalGen Float (Signal EntityTransform)
