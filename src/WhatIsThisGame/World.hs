@@ -34,11 +34,7 @@ world' =
      b <- background -< w
      p <- player     -< w
 
-
-     returnA -< makeWorld b p) . delay initialWorld
-  where makeWorld :: Entity -> Entity -> World
-        makeWorld b p =
-          World $ [b, p]
+     returnA -< World [b, p]) . delay initialWorld
 
 -- | The front-end for the world.
 world :: HasTime t s => Wire s () IO a World
