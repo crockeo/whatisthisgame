@@ -6,6 +6,7 @@ module WhatIsThisGame.World where
 --------------------
 -- Global Imports --
 import Prelude hiding ((.))
+import Control.Lens
 import Control.Wire
 import Data.Monoid
 
@@ -20,12 +21,19 @@ import WhatIsThisGame.Data
 
 -- | Providing the rendering for a @'World'@.
 instance Renderable World where
-  render assets (World es) =
-    mconcat $ map (render assets) es
+  render assets w =
+    mconcat $ foldl1 (++) [ map (render assets) $ w ^. getBackgrounds
+                          , [render assets $ w ^. getPlayer]
+                          , map (render assets) $ w ^. getBullets
+                          , map (render assets) $ w ^. getEnemies
+                          ]
 
 -- | The initial state of the world.
 initialWorld :: World
-initialWorld = World []
+initialWorld = World [initialBackground]
+                     (initialPlayer (-100))
+                     []
+                     []
 
 -- | Updating the world.
 world' :: (HasTime t s, Monoid e) => Wire s e IO World World
@@ -34,7 +42,10 @@ world' =
      b <- background -< w
      p <- player     -< w
 
-     returnA -< World [b, p]) . delay initialWorld
+     returnA -< World [b]
+                      p
+                      []
+                      []) . delay initialWorld
 
 -- | The front-end for the world.
 world :: HasTime t s => Wire s () IO a World

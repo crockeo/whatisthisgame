@@ -198,4 +198,10 @@ onGround e = (getPosition e ^. _y) <= groundHeight
 type EntityTransform = (Entity -> Entity)
 
 -- | Specifying the @'World'@ type.
-data World = World [Entity]
+data World = World { _getBackgrounds :: [Entity]
+                   , _getPlayer      :: Entity
+                   , _getBullets     :: [Entity]
+                   , _getEnemies     :: [Entity]
+                   }
+
+$(makeLenses ''World)
