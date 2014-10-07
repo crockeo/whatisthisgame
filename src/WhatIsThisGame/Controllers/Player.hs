@@ -52,14 +52,6 @@ maxSpeed = 100
 minSpeed :: Float
 minSpeed = playerAccelSpeed / 100
 
--- | Checking if the player should bounce.
-bounce :: Wire s e IO Float Bool
-bounce =
-  mkSF_ bounce' . liftA2 (,) mkId (fmap (^. _y) renderSize)
-  where bounce' :: (Float, Float) -> Bool
-        bounce' (y, h) =
-          y < 0 || y + (playerSize ^. _y) > h
-
 -- | The acceleration in the y-axis.
 yAccel :: Monoid e => Wire s e IO Float Float
 yAccel  =  mkSF_ decel              . keyDown (CharKey 'W') . keyDown (CharKey 'S')
@@ -79,7 +71,7 @@ yVelocity iv =
   where acc :: Float -> Float -> Float -> Bool -> Float
         acc dt v a b =
           if b
-            then -v / 1.5
+            then bound $ -v / 2
             else bound $ v + a * dt
 
         bound :: Float -> Float
@@ -90,24 +82,40 @@ yVelocity iv =
           | otherwise                     =  v
 
 
--- | The position in the y-axis.
-yPosition :: HasTime t s => Float -> Wire s e IO (Float, Float, Bool) Float
-yPosition iy =
+-- | The back-end of the position.
+yPosition' :: HasTime t s => Float -> Wire s e IO (Float, Float, Bool) Float
+yPosition' iy =
   mkSF $ \ds (v, h, b) ->
     let dt = realToFrac $ dtime ds
         y = move dt iy h v b in
-      y `seq` (iy, yPosition y)
+      y `seq` (iy, yPosition' y)
   where move :: Float -> Float -> Float -> Float -> Bool -> Float
         move dt y h v b =
           if b
-            then closer y 0 h
+            then if y < h / 2
+              then 0
+              else h - playerSize ^. _y
             else y + dt * v
 
-        closer :: Float -> Float -> Float -> Float
-        closer a t1 t2 =
-          snd $ max d1 d2
-          where d1 = (abs $ t1 - a, t1                   )
-                d2 = (abs $ t2 - a, t2 - playerSize ^. _y)
+-- | The front-end of the position.
+yPosition :: (HasTime t s, Monoid e) => Float -> Wire s e IO Bool Float
+yPosition iy =
+  proc b -> do
+    h <- fmap (^. _y) renderSize -< undefined
+
+    rec a <- delay 0 . yAccel -< v
+        v <- yVelocity 0   -< (a, b)
+        p <- yPosition' iy -< (v, h, b)
+
+    returnA -< p
+
+-- | Checking if the player should bounce.
+bounce :: Wire s e IO Float Bool
+bounce =
+  mkSF_ bounce' . liftA2 (,) mkId (fmap (^. _y) renderSize)
+  where bounce' :: (Float, Float) -> Bool
+        bounce' (y, h) =
+          y < 0 || y + (playerSize ^. _y) > h
 
 -- | Making the player shoot.
 shootPlayer :: Monoid e => Wire s e IO a EntityTransform
@@ -130,11 +138,9 @@ animatePlayer =
 movePlayer :: (HasTime t s, Monoid e) => Float -> Wire s e IO a EntityTransform
 movePlayer iy =
   proc _ -> do
-    h <- fmap (^. _y) renderSize -< undefined
-    rec a <- yAccel                  -< v
-        v <- delay 0 . yVelocity 0   -< (a, b)
-        p <- yPosition iy            -< (v, h, b)
-        b <- delay False . bounce    -< p
+    rec p <- delay iy    . yPosition iy -< b
+        b <- delay False . bounce       -< p
+
     returnA -< \e -> e { getPosition = getPosition e & _y .~ p }
 
 -- | The player controller.
