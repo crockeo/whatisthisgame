@@ -144,11 +144,19 @@ movePlayer iy =
     returnA -< \e -> e { getPosition = getPosition e & _y .~ p }
 
 -- | The player controller.
-playerController :: (HasTime t s, Monoid e) => Wire s e IO World EntityTransform
-playerController  = shootPlayer
-                 !. animatePlayer
-                 !. movePlayer 30
+playerController :: (HasTime t s, Monoid e) => Float -> Wire s e IO World EntityTransform
+playerController iy  = shootPlayer
+                    !. animatePlayer
+                    !. movePlayer iy
 
 -- | The actual player itself.
 player :: (HasTime t s, Monoid e) => Wire s e IO World Entity
-player = entity (initialPlayer 30) . playerController
+player =
+  mkGenN $ \w -> do
+    (V2 _ h) <- ioRenderSize
+    let iy = h / 2 - (playerSize ^. _y / 2)
+
+    return (Right $ initialPlayer iy, makePlayer iy)
+  where makePlayer :: (HasTime t s, Monoid e) => Float -> Wire s e IO World Entity
+        makePlayer iy =
+          entity (initialPlayer iy) . playerController iy
