@@ -13,10 +13,10 @@ import Linear.V2
 
 -------------------
 -- Local Imports --
-import WhatIsThisGame.Utils.Compose
 import WhatIsThisGame.Animation
 import WhatIsThisGame.Entity
 import WhatIsThisGame.Input
+import WhatIsThisGame.Utils
 import WhatIsThisGame.Data
 
 ----------
