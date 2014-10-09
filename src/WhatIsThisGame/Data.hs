@@ -176,6 +176,18 @@ instance Renderable Entity where
                  (getPosition e)
                  (getSize     e)
 
+-- | A type to represent the defaults for a type of bullet.
+data BulletType = PlayerBullet
+                | EnemyBullet
+
+-- | The bullet type.
+data Bullet = Bullet { getBulletType     :: BulletType
+                     , getBulletPosition :: V2 Float
+                     , getBulletSize     :: V2 Float
+                     , getBulletDamage   :: V2 Float
+                     , getBulletSpeed    :: V2 Float
+                     }
+
 -- | The default move speed of the player.
 playerMoveSpeed :: Float
 playerMoveSpeed = 20
