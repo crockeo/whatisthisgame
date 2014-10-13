@@ -9,3 +9,6 @@ config.cfg
 # Ignoring the compiled binary.
 whatisthisgame
 whatisthisgame.exe
+
+# Ignoring a run utility I have.
+run.sh

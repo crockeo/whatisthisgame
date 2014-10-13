@@ -47,7 +47,7 @@ world' w = do
 
   b   <- background w
   p   <- player y w
-  bus <- bullets (fmap shouldShoot p) (pure PlayerBullet) (fmap getPosition p)
+  bus <- bullets (fmap shouldShoot p) (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
 
   delay (initialWorld $ initialPlayer y) $ World <$> p
                                                  <*> sequence [b]
