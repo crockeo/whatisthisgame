@@ -4,6 +4,7 @@ module WhatIsThisGame.Controllers.Bullet where
 --------------------
 -- Global Imports --
 import Control.Applicative
+import Control.Monad.Fix
 import FRP.Elerea.Param
 import Control.Lens
 import Data.Maybe
@@ -42,6 +43,11 @@ makeBullet :: BulletType -> V2 Float -> Bullet
 makeBullet PlayerBullet pos = playerBullet pos
 makeBullet EnemyBullet  pos = enemyBullet  pos
 
+-- | Maybe making a new bullet. Depends on the @'Bool'@.
+maybeMakeBullet :: Bool -> BulletType -> V2 Float -> Maybe Bullet
+maybeMakeBullet False  _   _ = Nothing
+maybeMakeBullet  True bt pos = Just $ makeBullet bt pos
+
 -- | Simulating a bullet.
 stepBullet :: Bullet -> SignalGen Float (Signal (Maybe Bullet))
 stepBullet ib = do
@@ -51,44 +57,21 @@ stepBullet ib = do
         step  _ _ Nothing  = Nothing
         step dt _ (Just b) = Just $ b { getBulletPosition = getBulletPosition b + getBulletSpeed b * pure dt }
 
--- | Turning a list of @'SignalGen'@s into a @'SignalGen'@ of a list.
-produceList :: [SignalGen p (Signal a)] -> SignalGen p (Signal [a])
-produceList = fmap (sequence) . sequence
+-- | Simulating a list of bullets.
+stepBullets :: Signal Bool -> Signal BulletType -> Signal (V2 Float) -> SignalGen Float (Signal [Maybe Bullet])
+stepBullets sMake sBType sPos =
+  mfix stepBullets'
+  where stepBullets' :: Signal [Maybe Bullet] -> SignalGen Float (Signal [Maybe Bullet])
+        stepBullets' sMBullets = do
+          let newBullet = maybeMakeBullet <$> sMake <*> sBType <*> sPos
+          delay [] $ insertMaybe <$> sMBullets <*> newBullet
 
--- | Making a list of bullets from signal generators that make a Maybe Bullet.
-onlyRealBullets :: [SignalGen Float (Signal (Maybe Bullet))] -> SignalGen Float (Signal [Bullet])
-onlyRealBullets = fmap (fmap catMaybes) . produceList
-
--- | Making a new bullet generator.
-makeBulletGenerator :: BulletType
-                    -> V2 Float
-                    -> SignalGen Float (Signal (Maybe Bullet))
-makeBulletGenerator bType pos =
-  stepBullet $ makeBullet bType pos
-
--- | Creating a list of bullet generators.
-makeBulletGenerators :: Signal BulletType
-                     -> Signal (V2 Float)
-                     -> Signal Bool
-                     -> SignalGen Float (Signal [SignalGen Float (Signal (Maybe Bullet))])
-makeBulletGenerators sBType sPos sMake =
-  transfer3 [] makeBulletGenerators' sBType sPos sMake
-  where makeBulletGenerators' :: Float
-                              -> BulletType
-                              -> (V2 Float)
-                              -> Bool
-                              -> [SignalGen Float (Signal (Maybe Bullet))]
-                              -> [SignalGen Float (Signal (Maybe Bullet))]
-        makeBulletGenerators' _     _   _ False l = l
-        makeBulletGenerators' _ bType pos  True l = makeBulletGenerator bType pos : l
+        insertMaybe :: [Maybe Bullet] -> Maybe Bullet -> [Maybe Bullet]
+        insertMaybe l Nothing = l
+        insertMaybe l       b = b : l
 
 -- | The real bullets.
-bullets :: Signal BulletType
-        -> Signal (V2 Float)
-        -> Signal Bool
-        -> SignalGen Float (Signal [Bullet])
-bullets sBType sPos sMake = do
-  sGens <- makeBulletGenerators sBType sPos sMake
-  gens <- snapshot sGens
-
-  onlyRealBullets gens
+bullets :: Signal Bool -> Signal BulletType -> Signal (V2 Float) -> SignalGen Float (Signal [Bullet])
+bullets sMake sBType sPos = do
+  mBus <- stepBullets sMake sBType sPos
+  return $ fmap catMaybes mBus
