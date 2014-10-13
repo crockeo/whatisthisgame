@@ -5,3 +5,7 @@ dist/
 
 # Ignoring the generated config file
 config.cfg
+
+# Ignoring the compiled binary.
+whatisthisgame
+whatisthisgame.exe
