@@ -7,12 +7,16 @@ module WhatIsThisGame.World where
 import Control.Applicative
 import Control.Monad.Fix
 import FRP.Elerea.Param
+import Control.Lens
 import Data.Monoid
+import Linear.V2
 
 -------------------
 -- Local Imports --
 import WhatIsThisGame.Controllers.Background
+import WhatIsThisGame.Controllers.Bullet
 import WhatIsThisGame.Controllers.Player
+import WhatIsThisGame.Input
 import WhatIsThisGame.Data
 
 ----------
@@ -20,24 +24,37 @@ import WhatIsThisGame.Data
 
 -- | Providing the rendering for a @'World'@.
 instance Renderable World where
-  render assets (World es) =
-    mconcat $ map (render assets) es
+  render assets w =
+     mconcat $ mconcat [ map (render assets) $ worldGetBackgrounds w
+                       , map (render assets) $ worldGetEnemies w
+                       , map (render assets) $ worldGetBullets w
+                       , [render assets $ worldGetPlayer w]
+                       ]
 
 -- | The initial state of the world.
-initialWorld :: World
-initialWorld = World []
+initialWorld :: Entity -> World
+initialWorld p =
+  World { worldGetPlayer      = p
+        , worldGetBackgrounds = []
+        , worldGetEnemies     = []
+        , worldGetBullets     = []
+        }
 
 -- | Providing the back-end to the @'world'@ function.
 world' :: Signal World -> SignalGen Float (Signal World)
 world' w = do
-  b <- background w
-  p <- player w
+  y <- renderSize >>= (fmap calcPos . snapshot)
 
-  let l = sequence [ b
-                   , p
-                   ]
+  b   <- background w
+  p   <- player y w
+  bus <- bullets (pure PlayerBullet) (fmap getPosition p) (fmap shouldShoot p)
 
-  delay initialWorld $ World <$> l
+  delay (initialWorld $ initialPlayer y) $ World <$> p
+                                                 <*> sequence [b]
+                                                 <*> pure []
+                                                 <*> bus
+  where calcPos :: V2 Float -> Float
+        calcPos (V2 _ h) = (h / 2) - (playerSize ^. _y / 2)
 
 -- | Providing an always-updated @'World'@.
 world :: SignalGen Float (Signal World)

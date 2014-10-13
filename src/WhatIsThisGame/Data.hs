@@ -188,6 +188,18 @@ data Bullet = Bullet { getBulletType     :: BulletType
                      , getBulletSpeed    :: V2 Float
                      }
 
+-- | Rendering a bullet.
+instance Renderable Bullet where
+  render assets b =
+    SpriteRender (getSprites assets ! getSpriteName b)
+                 (getBulletPosition b)
+                 (getBulletSize b)
+    where getSpriteName :: Bullet -> String
+          getSpriteName b =
+            case getBulletType b of
+              PlayerBullet -> "res/bullet.png"
+              EnemyBullet  -> "res/bullet.png"
+
 -- | The default move speed of the player.
 playerMoveSpeed :: Float
 playerMoveSpeed = 20
@@ -210,4 +222,8 @@ onGround e = (getPosition e ^. _y) <= groundHeight
 type EntityTransform = (Entity -> Entity)
 
 -- | Specifying the @'World'@ type.
-data World = World [Entity]
+data World = World { worldGetPlayer      :: Entity
+                   , worldGetBackgrounds :: [Entity]
+                   , worldGetEnemies     :: [Entity]
+                   , worldGetBullets     :: [Bullet]
+                   }

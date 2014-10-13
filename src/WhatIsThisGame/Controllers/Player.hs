@@ -156,9 +156,6 @@ playerController y   = shootPlayer
                    !!. animatePlayer
 
 -- | The composed player @'Entity'@ being run by the @'playerController'@.
-player :: Signal World -> SignalGen Float (Signal Entity)
-player _ = do
-  y <- renderSize >>= (fmap calcPos . snapshot)
+player :: Float -> Signal World -> SignalGen Float (Signal Entity)
+player y _ = do
   playerController y >>= entity (initialPlayer y)
-  where calcPos :: V2 Float -> Float
-        calcPos (V2 _ h) = (h / 2) - (playerSize ^. _y / 2)

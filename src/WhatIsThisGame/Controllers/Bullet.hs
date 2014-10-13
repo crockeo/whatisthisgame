@@ -71,7 +71,7 @@ makeBulletGenerators :: Signal BulletType
                      -> Signal (V2 Float)
                      -> Signal Bool
                      -> SignalGen Float (Signal [SignalGen Float (Signal (Maybe Bullet))])
-makeBulletGenerators sBType sPos sMake = undefined
+makeBulletGenerators sBType sPos sMake =
   transfer3 [] makeBulletGenerators' sBType sPos sMake
   where makeBulletGenerators' :: Float
                               -> BulletType
