@@ -6,6 +6,7 @@ module WhatIsThisGame.Controllers.Bullet where
 import Control.Applicative
 import FRP.Elerea.Param
 import Control.Lens
+import Data.Maybe
 import Linear.V2
 
 -------------------
@@ -50,6 +51,44 @@ stepBullet ib = do
         step  _ _ Nothing  = Nothing
         step dt _ (Just b) = Just $ b { getBulletPosition = getBulletPosition b + getBulletSpeed b * pure dt }
 
-{--- | Creating a new @'SignalGen'@ for a bullet given input.-}
-{-makeBulletGenerator :: Signal BulletType -> Signal (V2 Float) -> Signal Bool -> SignalGen Float (Signal (Maybe (SignalGen Float Bullet)))-}
-{-makeBulletGenerator _ _ _ = undefined-}
+-- | Turning a list of @'SignalGen'@s into a @'SignalGen'@ of a list.
+produceList :: [SignalGen p (Signal a)] -> SignalGen p (Signal [a])
+produceList = fmap (sequence) . sequence
+
+-- | Making a list of bullets from signal generators that make a Maybe Bullet.
+onlyRealBullets :: [SignalGen Float (Signal (Maybe Bullet))] -> SignalGen Float (Signal [Bullet])
+onlyRealBullets = fmap (fmap catMaybes) . produceList
+
+-- | Making a new bullet generator.
+makeBulletGenerator :: BulletType
+                    -> V2 Float
+                    -> SignalGen Float (Signal (Maybe Bullet))
+makeBulletGenerator bType pos =
+  stepBullet $ makeBullet bType pos
+
+-- | Creating a list of bullet generators.
+makeBulletGenerators :: Signal BulletType
+                     -> Signal (V2 Float)
+                     -> Signal Bool
+                     -> SignalGen Float (Signal [SignalGen Float (Signal (Maybe Bullet))])
+makeBulletGenerators sBType sPos sMake = undefined
+  transfer3 [] makeBulletGenerators' sBType sPos sMake
+  where makeBulletGenerators' :: Float
+                              -> BulletType
+                              -> (V2 Float)
+                              -> Bool
+                              -> [SignalGen Float (Signal (Maybe Bullet))]
+                              -> [SignalGen Float (Signal (Maybe Bullet))]
+        makeBulletGenerators' _     _   _ False l = l
+        makeBulletGenerators' _ bType pos  True l = makeBulletGenerator bType pos : l
+
+-- | The real bullets.
+bullets :: Signal BulletType
+        -> Signal (V2 Float)
+        -> Signal Bool
+        -> SignalGen Float (Signal [Bullet])
+bullets sBType sPos sMake = do
+  sGens <- makeBulletGenerators sBType sPos sMake
+  gens <- snapshot sGens
+
+  onlyRealBullets gens
