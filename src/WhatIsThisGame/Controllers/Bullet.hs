@@ -22,6 +22,10 @@ import WhatIsThisGame.Data
 bulletSize :: V2 Float
 bulletSize = V2 3 1.5
 
+-- | The velocity of a bullet.
+bulletSpeed :: V2 Float
+bulletSpeed = V2 20 0
+
 -- | The default player bullet.
 playerBullet :: V2 Float -> V2 Float -> Bullet
 playerBullet pos size =
@@ -29,7 +33,7 @@ playerBullet pos size =
          , getBulletPosition = pos + (size / 2) - (bulletSize / 2)
          , getBulletSize     = bulletSize
          , getBulletDamage   = 15
-         , getBulletSpeed    = V2 5 0
+         , getBulletSpeed    = bulletSpeed
          }
 
 -- | The default enemy bullet.
@@ -39,7 +43,7 @@ enemyBullet pos size =
          , getBulletPosition = pos + (size / 2) - (bulletSize / 2)
          , getBulletSize     = bulletSize
          , getBulletDamage   = 15
-         , getBulletSpeed    = V2 5 0
+         , getBulletSpeed    = bulletSpeed
          }
 
 -- | Making a bullet from @'BulletType'@.
@@ -63,9 +67,9 @@ stepMaybeBullets dt w (b:bs) =
 
 -- | Possibly appending a bulle to a @['Maybe' 'Bullet']@.
 maybeAppendBullet :: Bool -> BulletType -> V2 Float -> V2 Float -> [Maybe Bullet] -> [Maybe Bullet]
-maybeAppendBullet False          _   _   _ bullets = bullets
-maybeAppendBullet  True bulletType pos vel bullets =
-  Just (makeBullet bulletType pos vel) : bullets
+maybeAppendBullet False          _   _   _ bs = bs
+maybeAppendBullet  True bulletType pos size bs =
+  Just (makeBullet bulletType pos size) : bs
 
 -- | The same as bullets, but without the @'Maybe'@s filtered out.
 maybeBullets :: Signal Bool
@@ -74,14 +78,14 @@ maybeBullets :: Signal Bool
              -> Signal (V2 Float)
              -> Signal [Maybe Bullet]
              -> SignalGen Float (Signal [Maybe Bullet])
-maybeBullets sMake sBulletType sPos sVel sBullets = do
+maybeBullets sMake sBulletType sPos sSize sBullets = do
   sDt    <- input
   sWidth <- fmap (fmap (^. _x)) renderSize
 
   delay [] $ stepMaybeBullets <$> sDt <*> sWidth <*>
-    (maybeAppendBullet <$> sMake <*> sBulletType <*> sPos <*> sVel <*> sBullets)
+    (maybeAppendBullet <$> sMake <*> sBulletType <*> sPos <*> sSize <*> sBullets)
 
 -- | Produces bullets given a number of signals describing its creation.
 bullets :: Signal Bool -> Signal BulletType -> Signal (V2 Float) -> Signal (V2 Float) -> SignalGen Float (Signal [Bullet])
-bullets sMake sBulletType sPos sVel =
-  fmap (fmap catMaybes) $ mfix $ maybeBullets sMake sBulletType sPos sVel
+bullets sMake sBulletType sPos sSize =
+  fmap (fmap catMaybes) $ mfix $ maybeBullets sMake sBulletType sPos sSize
