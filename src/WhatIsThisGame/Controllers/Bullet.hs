@@ -1,5 +1,5 @@
 -- | This module handles the creation of new bullets.
-module WhatIsThisGame.Controllers.Bullet where
+module WhatIsThisGame.Controllers.Bullet (bullets) where
 
 --------------------
 -- Global Imports --
@@ -47,35 +47,41 @@ makeBullet :: BulletType -> V2 Float -> V2 Float -> Bullet
 makeBullet PlayerBullet pos size = playerBullet pos size
 makeBullet EnemyBullet  pos size = enemyBullet  pos size
 
--- | Maybe making a new bullet. Depends on the @'Bool'@.
-maybeMakeBullet :: Bool -> BulletType -> V2 Float -> V2 Float -> Maybe Bullet
-maybeMakeBullet False  _   _    _ = Nothing
-maybeMakeBullet  True bt pos size = Just $ makeBullet bt pos size
+-- | Stepping a single bullet.
+stepBullet :: Float -> Float -> Bullet -> Maybe Bullet
+stepBullet dt w b =
+  let np = getBulletPosition b + getBulletSpeed b * pure dt in
+    if np ^. _x > w
+      then Nothing
+      else Just $ b { getBulletPosition = np }
 
--- | Simulating a bullet.
-stepBullet :: Bullet -> SignalGen Float (Signal (Maybe Bullet))
-stepBullet ib = do
-  ssize <- renderSize
-  transfer (Just ib) step $ fmap (^. _x) ssize
-  where step :: Float -> Float -> Maybe Bullet -> Maybe Bullet
-        step  _ _ Nothing  = Nothing
-        step dt _ (Just b) = Just $ b { getBulletPosition = getBulletPosition b + getBulletSpeed b * pure dt }
+-- | Stepping a whole list of @'Maybe' 'Bullet'@.
+stepMaybeBullets :: Float -> Float -> [Maybe Bullet] -> [Maybe Bullet]
+stepMaybeBullets  _ _     [] = []
+stepMaybeBullets dt w (b:bs) =
+  (b >>= stepBullet dt w) : stepMaybeBullets dt w bs
 
--- | Simulating a list of bullets.
-stepBullets :: Signal Bool -> Signal BulletType -> Signal (V2 Float) -> Signal (V2 Float) -> SignalGen Float (Signal [Maybe Bullet])
-stepBullets sMake sBType sPos sSize =
-  mfix stepBullets'
-  where stepBullets' :: Signal [Maybe Bullet] -> SignalGen Float (Signal [Maybe Bullet])
-        stepBullets' sMBullets = do
-          let newBullet = maybeMakeBullet <$> sMake <*> sBType <*> sPos <*> sSize
-          delay [] $ insertMaybe <$> sMBullets <*> newBullet
+-- | Possibly appending a bulle to a @['Maybe' 'Bullet']@.
+maybeAppendBullet :: Bool -> BulletType -> V2 Float -> V2 Float -> [Maybe Bullet] -> [Maybe Bullet]
+maybeAppendBullet False          _   _   _ bullets = bullets
+maybeAppendBullet  True bulletType pos vel bullets =
+  Just (makeBullet bulletType pos vel) : bullets
 
-        insertMaybe :: [Maybe Bullet] -> Maybe Bullet -> [Maybe Bullet]
-        insertMaybe l Nothing = l
-        insertMaybe l       b = b : l
+-- | The same as bullets, but without the @'Maybe'@s filtered out.
+maybeBullets :: Signal Bool
+             -> Signal BulletType
+             -> Signal (V2 Float)
+             -> Signal (V2 Float)
+             -> Signal [Maybe Bullet]
+             -> SignalGen Float (Signal [Maybe Bullet])
+maybeBullets sMake sBulletType sPos sVel sBullets = do
+  sDt    <- input
+  sWidth <- fmap (fmap (^. _x)) renderSize
 
--- | The real bullets.
+  delay [] $ stepMaybeBullets <$> sDt <*> sWidth <*>
+    (maybeAppendBullet <$> sMake <*> sBulletType <*> sPos <*> sVel <*> sBullets)
+
+-- | Produces bullets given a number of signals describing its creation.
 bullets :: Signal Bool -> Signal BulletType -> Signal (V2 Float) -> Signal (V2 Float) -> SignalGen Float (Signal [Bullet])
-bullets sMake sBType sPos sSize = do
-  mBus <- stepBullets sMake sBType sPos sSize
-  return $ fmap catMaybes mBus
+bullets sMake sBulletType sPos sVel =
+  fmap (fmap catMaybes) $ mfix $ maybeBullets sMake sBulletType sPos sVel
