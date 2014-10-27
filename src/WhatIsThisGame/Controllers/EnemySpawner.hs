@@ -20,12 +20,11 @@ import WhatIsThisGame.Data
 newEnemy :: Float -> SignalGen p Entity
 newEnemy x = do
   rY <- randomRGen (0, 480)
-  rW <- randomRGen (5, 50)
-  rH <- randomRGen (5, 50)
+  rS <- randomRGen (5, 20)
 
   return $ Entity { getName     = "res/player/01.png"
                   , getPosition = V2 x rY
-                  , getSize     = V2 rW rH
+                  , getSize     = V2 (rS * 1.618) rS
                   , getHealth   = 1
                   , shouldShoot = False
                   }
