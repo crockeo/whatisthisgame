@@ -48,10 +48,10 @@ world' w = do
   y <- renderSize >>= (fmap calcPos . snapshot)
 
   b   <- background w
-  t   <- periodically 0.25
   es  <- enemies w
   p   <- player y w
-  bus <- bullets ((&&) <$> fmap shouldShoot p <*> t) (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
+  t   <- periodically 0.25 $ fmap shouldShoot p
+  bus <- bullets t (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
 
   delay (initialWorld $ initialPlayer y) $ World <$> p
                                                  <*> sequence [b]

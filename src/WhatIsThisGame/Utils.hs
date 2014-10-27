@@ -30,12 +30,12 @@ deltaTime =
         deltaTime' dt _ = dt
 
 -- | A @'SignalGen'@ that ticks every so often with a @'True'@.
-periodically :: Float -> SignalGen Float (Signal Bool)
-periodically cap =
-  sgMap snd $ stateful (0, False) periodically'
-  where periodically' :: Float -> (Float, Bool) -> (Float, Bool)
-        periodically' dt (t, _) =
+periodically :: Float -> Signal Bool -> SignalGen Float (Signal Bool)
+periodically cap sb =
+  sgMap snd $ transfer (0, False) periodically' sb
+  where periodically' :: Float -> Bool -> (Float, Bool) -> (Float, Bool)
+        periodically' dt b (t, _) =
           let t' = t + dt in
-            if t' >= cap
+            if b && t' >= cap
               then (0 ,  True)
               else (t', False)
