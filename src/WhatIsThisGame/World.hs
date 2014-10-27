@@ -13,6 +13,7 @@ import Linear.V2
 
 -------------------
 -- Local Imports --
+import WhatIsThisGame.Controllers.EnemySpawner
 import WhatIsThisGame.Controllers.Background
 import WhatIsThisGame.Controllers.Bullet
 import WhatIsThisGame.Controllers.Player
@@ -48,12 +49,13 @@ world' w = do
 
   b   <- background w
   t   <- periodically 0.25
+  es  <- enemies w
   p   <- player y w
   bus <- bullets ((&&) <$> fmap shouldShoot p <*> t) (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
 
   delay (initialWorld $ initialPlayer y) $ World <$> p
                                                  <*> sequence [b]
-                                                 <*> pure []
+                                                 <*> es
                                                  <*> bus
   where calcPos :: V2 Float -> Float
         calcPos (V2 _ h) = (h / 2) - (playerSize ^. _y / 2)
