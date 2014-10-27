@@ -17,6 +17,7 @@ import WhatIsThisGame.Controllers.Background
 import WhatIsThisGame.Controllers.Bullet
 import WhatIsThisGame.Controllers.Player
 import WhatIsThisGame.Input
+import WhatIsThisGame.Utils
 import WhatIsThisGame.Data
 
 ----------
@@ -46,8 +47,9 @@ world' w = do
   y <- renderSize >>= (fmap calcPos . snapshot)
 
   b   <- background w
+  t   <- periodically 0.25
   p   <- player y w
-  bus <- bullets (fmap shouldShoot p) (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
+  bus <- bullets ((&&) <$> fmap shouldShoot p <*> t) (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
 
   delay (initialWorld $ initialPlayer y) $ World <$> p
                                                  <*> sequence [b]
