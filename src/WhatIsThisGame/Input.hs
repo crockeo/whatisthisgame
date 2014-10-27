@@ -7,6 +7,7 @@ module WhatIsThisGame.Input where
 import Graphics.Rendering.OpenGL
 import Graphics.UI.GLFW as GLFW
 import FRP.Elerea.Param
+import System.Random
 import Linear.V2
 
 ----------
@@ -36,3 +37,8 @@ ioKeyDown k = do
 -- | Getting the render size of the window in the Elerea network.
 keyDown :: Enum k => k -> SignalGen p (Signal Bool)
 keyDown = effectful . ioKeyDown
+
+-- | Getting a random value within a range.
+randomRGen :: Random a => (a, a) -> SignalGen p (Signal a)
+randomRGen p =
+  effectful $ randomRIO p
