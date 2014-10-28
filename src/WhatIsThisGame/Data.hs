@@ -140,18 +140,14 @@ instance Monoid Assets where
 
 -- | A pure form of render calls. Can be optimized pre-render to increase
 --   performance.
-data Render = SpriteRender Sprite  (V2 Float) (V2 Float)
-            | QuadRender   [Color] (V2 Float) (V2 Float)
-            | Renders      [Render]
+data Render = SpriteRender Sprite (V2 Float) (V2 Float)
 
--- | Allowing @'Render'@s to be composed through mconcat/mappend.
-instance Monoid Render where
-  mempty = Renders []
+-- | A type to represent a batch of @'Sprite's@ to render. They should ALL have
+--   the same @'Sprite'@.
+data SpriteBatch = SpriteBatch [Render]
 
-  mappend (Renders l1) (Renders l2) = Renders $ l1 ++ l2
-  mappend (Renders l1) other        = Renders $ other : l1
-  mappend other        (Renders l1) = Renders $ other : l1
-  mappend other1       other2       = Renders [other1, other2]
+-- | A type to represent multiple @'Render'@ calls.
+type Renders = [SpriteBatch]
 
 -- | A synonym for map's access function.
 (!) :: Ord a => Map.Map a b -> a -> b
@@ -159,7 +155,7 @@ instance Monoid Render where
 
 -- | Specifying that a type can be rendered.
 class Renderable a where
-  render :: Assets -> a -> Render
+  render :: Assets -> a -> Renders
 
 -- | The definition of the information necessary for an entity.
 data Entity = Entity { getName        :: String
@@ -172,9 +168,11 @@ data Entity = Entity { getName        :: String
 -- | Rendering an entity.
 instance Renderable Entity where
   render assets e =
-    SpriteRender (getSprites assets ! getName e)
-                 (getPosition e)
-                 (getSize     e)
+    [ SpriteBatch [ SpriteRender (getSprites assets ! getName e)
+                                 (getPosition e)
+                                 (getSize     e)
+                  ]
+    ]
 
 -- | A type to represent the defaults for a type of bullet.
 data BulletType = PlayerBullet
@@ -191,12 +189,14 @@ data Bullet = Bullet { getBulletType     :: BulletType
 -- | Rendering a bullet.
 instance Renderable Bullet where
   render assets b =
-    SpriteRender (getSprites assets ! getSpriteName b)
-                 (getBulletPosition b)
-                 (getBulletSize b)
+    [ SpriteBatch [ SpriteRender (getSprites assets ! getSpriteName b)
+                                 (getBulletPosition b)
+                                 (getBulletSize b)
+                  ]
+    ]
     where getSpriteName :: Bullet -> String
-          getSpriteName b =
-            case getBulletType b of
+          getSpriteName bt =
+            case getBulletType bt of
               PlayerBullet -> "res/bullet.png"
               EnemyBullet  -> "res/bullet.png"
 

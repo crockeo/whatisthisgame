@@ -24,14 +24,31 @@ import WhatIsThisGame.Data
 ----------
 -- Code --
 
--- | Providing the rendering for a @'World'@.
+-- | Joining a bunch of @'SpriteBatch'@es contained in a @'Renders'@.
+joinSpriteBatches :: Renders -> SpriteBatch
+joinSpriteBatches =
+  foldl joinSpriteBatch (SpriteBatch [])
+  where joinSpriteBatch :: SpriteBatch -> SpriteBatch -> SpriteBatch
+        joinSpriteBatch (SpriteBatch rs1) (SpriteBatch rs2) =
+          SpriteBatch $ rs1 ++ rs2
+
+-- | Providing the rendering for the @'World'@.
 instance Renderable World where
   render assets w =
-     mconcat $ mconcat [ map (render assets) $ worldGetBackgrounds w
-                       , map (render assets) $ worldGetEnemies w
-                       , map (render assets) $ worldGetBullets w
-                       , [render assets $ worldGetPlayer w]
-                       ]
+    [ joinSpriteBatches $ foldl (++) [] $ map (render assets) $ worldGetBackgrounds w
+    , joinSpriteBatches $ foldl (++) [] $ map (render assets) $ worldGetEnemies     w
+    , joinSpriteBatches $ foldl (++) [] $ map (render assets) $ worldGetBullets     w
+    , head $ render assets $ worldGetPlayer w
+    ]
+
+{--- | Providing the rendering for a @'World'@.-}
+{-instance Renderable World where-}
+  {-render assets w =-}
+     {-[ SpriteBatch $ map (render assets) $ worldGetBackgrounds w-}
+     {-, SpriteBatch $ map (render assets) $ worldGetEnemies w-}
+     {-, SpriteBatch $ map (render assets) $ worldGetBullets w-}
+     {-, [render assets $ worldGetPlayer w]-}
+     {-]-}
 
 -- | The initial state of the world.
 initialWorld :: Entity -> World

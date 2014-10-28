@@ -8,14 +8,12 @@ import Graphics.Rendering.OpenGL hiding ( Shader
                                         , Color
                                         )
 
-import Data.Foldable hiding (foldl1, forM_)
+import Data.Foldable hiding (foldl1, mapM_)
 import Control.Applicative
-import Data.Vinyl.TyFun
 import Graphics.VinylGL
 import Graphics.GLUtil
 import Control.Monad
 import Data.Vinyl
-import Linear.V4
 import Linear.V2
 
 -------------------
@@ -32,11 +30,6 @@ scaleCoord (V2 x y) = do
   (V2 w h) <- ioRenderSize
   return $ V2 (realToFrac x / w)
               (realToFrac y / h)
-
--- | Binding a color.
-bindColor :: (App el GLSLColor ~ V4 GLfloat, Applicative f) => Color -> Rec el f '[GLSLColor]
-bindColor (Color c) = glslColor =: fmap realToFrac c
-
 -- | Generating a list of vertices for a quad based on a position and a size.
 generateVertices :: (Real a, Fractional b) => V2 a -> V2 a -> IO [V2 b]
 generateVertices p s = do
@@ -54,14 +47,10 @@ tileTex =
   foldMap (flip (zipWith (<+>)) (cycle coords) . map (vertexCoord =:))
   where coords = map (textureCoord =:) $ V2 <$> [0, 1] <*> [1, 0]
 
--- | Computing the color for each input coordinate.
-calcQuad :: [Color] -> [[V2 GLfloat]] -> [PlainFieldRec [VertexCoord, GLSLColor]]
-calcQuad cs = foldMap (flip (zipWith (<+>)) (cycle $ map bindColor cs) . map (vertexCoord =:))
-
 -- | Rendering a set of @'Sprite'@s contained within a list of @'Render'@
 --   calls.
-renderSprites :: CamMatrix -> Shader -> [Render] -> IO ()
-renderSprites cm (Shader sp) rs = do
+actuallyPerformRender :: CamMatrix -> Shader -> SpriteBatch -> IO ()
+actuallyPerformRender cm (Shader sp) (SpriteBatch rs) = do
   let tos = map (\(SpriteRender (Sprite a) _ _) -> a) rs
       ps  = map (\(SpriteRender         _  a _) -> a) rs
       ss  = map (\(SpriteRender         _  _ a) -> a) rs
@@ -82,57 +71,7 @@ renderSprites cm (Shader sp) rs = do
   deleteObjectName eb
   deleteVAO vao
 
--- | Rendering a set of quads contained within a list of @'Render'@ calls.
-renderQuads :: CamMatrix -> Shader -> [Render] -> IO ()
-renderQuads cm (Shader sp) rs = do
-  let cs  = foldl1 (++) $ map (\(QuadRender a _ _) -> a) rs
-      ps  = map (\(QuadRender _ a _) -> a) rs
-      ss  = map (\(QuadRender _ _ a) -> a) rs
-      len = length rs
-
-  verts <- mapM (uncurry generateVertices) (zip ps ss) >>= bufferVertices . calcQuad cs
-  eb    <- bufferIndices $ calcIndices len
-  vao   <- makeVAO $ do
-    enableVertices' sp verts
-    bindVertices verts
-    bindBuffer ElementArrayBuffer $= Just eb
-
-  currentProgram $= Just (program sp)
-  setUniforms sp cm
-  withVAO vao $ drawIndexedTris (fromIntegral len * 2)
-
-  deleteVertices verts
-  deleteObjectName eb
-  deleteVAO vao
-
-  return ()
-
-{-
-
-KEEP THIS CODE FOR WHEN YOU NEED TO OPTIMISE IT LATER.
-
--- | Performing a render on a whole @'Render'@ call.
-performRender :: CamMatrix -> (Shader, Shader) -> Render -> IO ()
-performRender cm (ssp, qsp) r = do
-  let (srs, qrs) = split r
-
-  unless (null srs) $ renderSprites cm ssp srs
-  unless (null qrs) $ renderQuads   cm qsp qrs
-  where split :: Render -> ([Render], [Render])
-        split sr@(SpriteRender _ _ _) = ([sr],   [])
-        split qr@(QuadRender   _ _ _) = (  [], [qr])
-        split    (Renders          l) =
-          let l' = map split l in
-            if null l'
-              then ([], [])
-              else foldl1 joinTuple l'
-
-        joinTuple :: ([Render], [Render]) -> ([Render], [Render]) -> ([Render], [Render])
-        joinTuple (srs1, qrs1) (srs2, qrs2) = (srs1 ++ srs2, qrs1 ++ qrs2)
-
--}
-
-performRender :: CamMatrix -> (Shader, Shader) -> Render -> IO ()
-performRender cm (ssp,   _) sr@(SpriteRender _ _ _) = renderSprites cm ssp [sr]
-performRender cm (  _, qsp) qr@(QuadRender   _ _ _) = renderQuads   cm qsp [qr]
-performRender cm shaders       (Renders          l) = forM_ l $ performRender cm shaders
+-- | Performing a render.
+performRender :: CamMatrix -> Shader -> Renders -> IO ()
+performRender cm sp rs =
+  mapM_ (actuallyPerformRender cm sp) rs
