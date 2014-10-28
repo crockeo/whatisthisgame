@@ -12,7 +12,6 @@ import Data.Foldable hiding (foldl1, mapM_)
 import Control.Applicative
 import Graphics.VinylGL
 import Graphics.GLUtil
-import Control.Monad
 import Data.Vinyl
 import Linear.V2
 
