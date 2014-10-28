@@ -5,7 +5,6 @@ module WhatIsThisGame.Controllers.EnemySpawner (enemies) where
 --------------------
 -- Global Imports --
 import FRP.Elerea.Param
-import Control.Monad
 import Linear.V2
 
 -------------------
@@ -20,7 +19,7 @@ import WhatIsThisGame.Data
 newEnemy :: Float -> SignalGen p Entity
 newEnemy x = do
   rY <- randomRGen (0, 480)
-  rS <- randomRGen (5, 20)
+  rS <- randomRGen (1, 1)
 
   return $ Entity { getName     = "res/player/01.png"
                   , getPosition = V2 x rY
@@ -29,7 +28,18 @@ newEnemy x = do
                   , shouldShoot = False
                   }
 
+-- | Stepping an entity
+step :: Float -> [Entity] -> [Entity]
+step dt es =
+  map step' es
+  where step' :: Entity -> Entity
+        step' e =
+          e { getPosition = getPosition e + V2 (-20 * dt) 0 }
+
+-- | Stepping a bunch of entities.
+stepEntities :: [Entity] -> SignalGen Float (Signal [Entity])
+stepEntities es = stateful es step
+
 -- | The list of simulated enemies.
 enemies :: Signal World -> SignalGen Float (Signal [Entity])
-enemies _ =
-  fmap return $ sequence [newEnemy x | x <- [1..50]]
+enemies _ = sequence [newEnemy x | x <- replicate 20 150] >>= stepEntities
