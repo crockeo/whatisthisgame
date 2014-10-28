@@ -8,7 +8,6 @@ import Control.Applicative
 import Control.Monad.Fix
 import FRP.Elerea.Param
 import Control.Lens
-import Data.Monoid
 import Linear.V2
 
 -------------------
@@ -59,7 +58,7 @@ world' w = do
   es  <- enemies w
   p   <- player y w
   t   <- periodically 0.25 $ fmap shouldShoot p
-  bus <- bullets t (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
+  bus <- bullets w t (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
 
   delay (initialWorld $ initialPlayer y) $ World <$> p
                                                  <*> sequence [b]
