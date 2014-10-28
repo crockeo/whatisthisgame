@@ -41,15 +41,6 @@ instance Renderable World where
     , head $ render assets $ worldGetPlayer w
     ]
 
-{--- | Providing the rendering for a @'World'@.-}
-{-instance Renderable World where-}
-  {-render assets w =-}
-     {-[ SpriteBatch $ map (render assets) $ worldGetBackgrounds w-}
-     {-, SpriteBatch $ map (render assets) $ worldGetEnemies w-}
-     {-, SpriteBatch $ map (render assets) $ worldGetBullets w-}
-     {-, [render assets $ worldGetPlayer w]-}
-     {-]-}
-
 -- | The initial state of the world.
 initialWorld :: Entity -> World
 initialWorld p =
