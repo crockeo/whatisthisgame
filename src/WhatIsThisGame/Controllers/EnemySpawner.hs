@@ -25,7 +25,7 @@ import WhatIsThisGame.Data
 -- | The rate for a new enemy to spawn. (In other words, the time it takes for a
 --   new enemy to spawn.)
 spawnRate :: Float
-spawnRate = 0.75
+spawnRate = 1
 
 -- | Returns @'True'@ when a new enemy *should* spawn.
 shouldSpawn :: SignalGen Float (Signal Bool)
@@ -44,7 +44,7 @@ enemyPosition = do
 -- | Making a new enemy.
 newEnemy :: V2 Float -> Float -> Entity
 newEnemy pos s =
-  Entity { getName     = "res/player/01.png"
+  Entity { getName     = "res/enemy.png"
          , getPosition = pos - size / 2
          , getSize     = size
          , getHealth   = 1
@@ -88,7 +88,7 @@ maybeAppendEnemy  True pos size l =
 maybeEnemies :: Signal World -> Signal Bool -> Signal [Maybe Entity] -> SignalGen Float (Signal [Maybe Entity])
 maybeEnemies sWorld sMake sMes = do
   sPos  <- enemyPosition
-  sSize <- randomRGen (1, 4)
+  sSize <- randomRGen (5, 10)
   dt    <- input
   
   delay [] $ stepEnemies <$> dt <*> fmap worldGetBullets sWorld <*>
