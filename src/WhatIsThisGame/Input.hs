@@ -39,6 +39,6 @@ keyDown :: Enum k => k -> SignalGen p (Signal Bool)
 keyDown = effectful . ioKeyDown
 
 -- | Getting a random value within a range.
-randomRGen :: Random a => (a, a) -> SignalGen p a
+randomRGen :: Random a => (a, a) -> SignalGen p (Signal a)
 randomRGen p =
-  execute $ randomRIO p
+  effectful $ randomRIO p
