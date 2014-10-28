@@ -5,11 +5,14 @@ module WhatIsThisGame.Controllers.EnemySpawner (enemies) where
 --------------------
 -- Global Imports --
 import FRP.Elerea.Param
+import Control.Lens
+import Data.Maybe
 import Linear.V2
 
 -------------------
 -- Local Imports --
 import WhatIsThisGame.Input
+import WhatIsThisGame.Utils
 import WhatIsThisGame.Data
 
 ----------
@@ -29,17 +32,28 @@ newEnemy x = do
                   }
 
 -- | Stepping an entity
-step :: Float -> [Entity] -> [Entity]
+step :: Float -> [Maybe Entity] -> [Maybe Entity]
 step dt es =
   map step' es
-  where step' :: Entity -> Entity
-        step' e =
-          e { getPosition = getPosition e + V2 (-20 * dt) 0 }
+  where step' :: Maybe Entity -> Maybe Entity
+        step' me =
+          case me of
+            Nothing  -> Nothing
+            Just e   -> 
+              let width  = getSize e ^. _x
+                  newPos = getPosition e + V2 (-20 * dt) 0 in
+                if (newPos ^. _x) + width < 0
+                  then Nothing
+                  else Just $ e { getPosition = newPos }
 
 -- | Stepping a bunch of entities.
-stepEntities :: [Entity] -> SignalGen Float (Signal [Entity])
+stepEntities :: [Maybe Entity] -> SignalGen Float (Signal [Maybe Entity])
 stepEntities es = stateful es step
 
 -- | The list of simulated enemies.
+maybeEnemies :: Signal World -> SignalGen Float (Signal [Maybe Entity])
+maybeEnemies _ = sequence [fmap Just $ newEnemy x | x <- replicate 20 150] >>= stepEntities
+
+-- | The list of simulated enemies - with all of the dead ones filtered out.
 enemies :: Signal World -> SignalGen Float (Signal [Entity])
-enemies _ = sequence [newEnemy x | x <- replicate 20 150] >>= stepEntities
+enemies = sgMap catMaybes . maybeEnemies
