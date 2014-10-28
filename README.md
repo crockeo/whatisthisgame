@@ -10,7 +10,7 @@ Links follow:
 * [Elerea](http://hackage.haskell.org/package/elerea).
 
 **WARNING**: The code in its current state is a little dirty. I'm working on a
-'do it first, then make it beautiful' basis. I'll come back and polish
+'*do it first, then make it beautiful*' basis. I'll come back and polish
 everything up after the project is reasonably complete.
 
 ### Installation
