@@ -24,27 +24,29 @@ bulletSize = V2 3 1.5
 
 -- | The velocity of a bullet.
 bulletSpeed :: V2 Float
-bulletSpeed = V2 20 0
+bulletSpeed = V2 50 0
 
 -- | The default player bullet.
 playerBullet :: V2 Float -> V2 Float -> Bullet
 playerBullet pos size =
   Bullet { getBulletType     = PlayerBullet
-         , getBulletPosition = pos + (size / 2) - (bulletSize / 2)
+         , getBulletPosition = pos'
          , getBulletSize     = bulletSize
          , getBulletDamage   = 15
          , getBulletSpeed    = bulletSpeed
          }
+  where pos' = pos + size - (bulletSize / 2) - (V2 (size ^. _x / 8) (size ^. _y) / 2)
 
 -- | The default enemy bullet.
 enemyBullet :: V2 Float -> V2 Float -> Bullet
 enemyBullet pos size =
   Bullet { getBulletType     = EnemyBullet
-         , getBulletPosition = pos + (size / 2) - (bulletSize / 2)
+         , getBulletPosition = pos'
          , getBulletSize     = bulletSize
          , getBulletDamage   = 15
-         , getBulletSpeed    = bulletSpeed
+         , getBulletSpeed    = -bulletSpeed
          }
+  where pos' = pos + (V2 0 (size ^. _y / 2)) - (bulletSize - 2)
 
 -- | Making a bullet from @'BulletType'@.
 makeBullet :: BulletType -> V2 Float -> V2 Float -> Bullet
