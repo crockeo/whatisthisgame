@@ -96,6 +96,16 @@ red   = Color $ V4 1 0 0 1
 green = Color $ V4 0 1 0 1
 blue  = Color $ V4 0 0 1 1
 
+-- | A type to be used when calculating collision.
+data CollisionRectangle = CollisionRectangle { _crPos  :: V2 Float
+                          , _crSize :: V2 Float
+                          } 
+                         
+-- | This instance defines that a type can be converted to a
+--   @'CollisionRectangle'@, and can therefore be used to calculate collision.
+class Collidable a where
+  toCollisionRectangle :: a -> CollisionRectangle
+
 -- | A data structure to represent a sprite.
 newtype Sprite = Sprite TextureObject
 
@@ -173,6 +183,13 @@ instance Renderable Entity where
                                  (getSize     e)
                   ]
     ]
+    
+-- | Allowing an @'Entity'@ to check collision.
+instance Collidable Entity where
+  toCollisionRectangle entity =
+    CollisionRectangle { _crPos  = getPosition entity
+                       , _crSize = getSize     entity
+                       }
 
 -- | A type to represent the defaults for a type of bullet.
 data BulletType = PlayerBullet
@@ -199,6 +216,13 @@ instance Renderable Bullet where
             case getBulletType bt of
               PlayerBullet -> "res/bullet.png"
               EnemyBullet  -> "res/bullet.png"
+
+-- | Allowing a @'Bullet'@ to check collision.
+instance Collidable Bullet where
+  toCollisionRectangle bullet =
+    CollisionRectangle { _crPos  = getBulletPosition bullet
+                       , _crSize = getBulletSize     bullet
+                       }
 
 -- | The default move speed of the player.
 playerMoveSpeed :: Float

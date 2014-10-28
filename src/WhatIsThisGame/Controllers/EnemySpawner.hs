@@ -14,6 +14,7 @@ import Linear.V2
 
 -------------------
 -- Local Imports --
+import WhatIsThisGame.Collision
 import WhatIsThisGame.Input
 import WhatIsThisGame.Utils
 import WhatIsThisGame.Data
@@ -52,8 +53,8 @@ newEnemy pos s =
   where size = V2 (s * 1.618) s
 
 -- | Stepping a single @'Entity'@ that represents an enemy.
-stepEnemy :: Float -> Maybe Entity -> Maybe Entity
-stepEnemy dt me =
+stepEnemy :: Float -> (Maybe Entity, [Bullet]) -> Maybe Entity
+stepEnemy dt (me, bus) =
   case me of
     Nothing -> Nothing
     Just e  ->
@@ -61,11 +62,21 @@ stepEnemy dt me =
           newPos = getPosition e + V2 (-20 * dt) 0 in
         if (newPos ^. _x) + width < 0
           then Nothing
-          else Just $ e { getPosition = newPos }
+          else findDeath bus $ e { getPosition = newPos }
+  where findDeath :: [Bullet] -> Entity -> Maybe Entity
+        findDeath []     e = Just e
+        findDeath (b:bs) e =
+          if looseCollides b e
+            then Nothing
+            else findDeath bs e
 
 -- | Stepping a whole list of enemies.
-stepEnemies :: Float -> [Maybe Entity] -> [Maybe Entity]
-stepEnemies dt = map (stepEnemy dt)
+stepEnemies :: Float -> [Bullet] -> [Maybe Entity] -> [Maybe Entity]
+stepEnemies dt bus =
+  map (stepEnemy dt) . pair bus
+  where pair :: b -> [a] -> [(a, b)]
+        pair _    []  = []
+        pair b (a:as) = (a, b) : pair b as
 
 -- | Maybe adding a new @'Entity'@ to the list.
 maybeAppendEnemy :: Bool -> V2 Float -> Float -> [Maybe Entity] -> [Maybe Entity]
@@ -75,15 +86,13 @@ maybeAppendEnemy  True pos size l =
 
 -- | The list of simulated enemies.
 maybeEnemies :: Signal World -> Signal Bool -> Signal [Maybe Entity] -> SignalGen Float (Signal [Maybe Entity])
-maybeEnemies _ sMake sMes = do
+maybeEnemies sWorld sMake sMes = do
   sPos  <- enemyPosition
   sSize <- randomRGen (1, 4)
   dt    <- input
   
-  delay [] $ stepEnemies <$> dt <*> (maybeAppendEnemy <$> sMake <*> sPos <*> sSize <*> sMes)
-  where maybeEnemies' :: Entity -> Float -> Bool -> [Maybe Entity] -> [Maybe Entity]
-        maybeEnemies' _ dt False l = stepEnemies dt l
-        maybeEnemies' e dt  True l = maybeEnemies' e dt False (Just e : l)
+  delay [] $ stepEnemies <$> dt <*> fmap worldGetBullets sWorld <*>
+    (maybeAppendEnemy <$> sMake <*> sPos <*> sSize <*> sMes)
 
 -- | The list of simulated enemies - with all of the dead ones filtered out.
 enemies :: Signal World -> SignalGen Float (Signal [Entity])
