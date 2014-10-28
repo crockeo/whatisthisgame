@@ -41,16 +41,6 @@ newEnemy x = do
                   , shouldShoot = False
                   }
 
-{-
--- | Stepping an entity
-step :: Float -> [Maybe Entity] -> [Maybe Entity]
-step dt es = map (stepEnemy dt) es
-
--- | Stepping a bunch of entities.
-stepEntities :: [Maybe Entity] -> SignalGen Float (Signal [Maybe Entity])
-stepEntities es = stateful es step
--}
-
 -- | Stepping a single @'Entity'@ that represents an enemy.
 stepEnemy :: Float -> Maybe Entity -> Maybe Entity
 stepEnemy dt me =
