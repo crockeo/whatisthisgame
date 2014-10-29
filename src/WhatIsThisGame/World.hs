@@ -54,14 +54,14 @@ world' :: Signal World -> SignalGen Float (Signal World)
 world' w = do
   y <- renderSize >>= (fmap calcPos . snapshot)
 
-  b   <- background w
+  bs  <- backgrounds w
   es  <- enemies w
   p   <- player y w
   t   <- periodically 0.25 $ fmap shouldShoot p
   bus <- bullets w t (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
 
   delay (initialWorld $ initialPlayer y) $ World <$> p
-                                                 <*> sequence [b]
+                                                 <*> bs
                                                  <*> es
                                                  <*> bus
   where calcPos :: V2 Float -> Float
