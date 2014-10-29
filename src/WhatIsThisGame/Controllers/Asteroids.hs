@@ -3,10 +3,9 @@ module WhatIsThisGame.Controllers.Asteroids (asteroids) where
 
 --------------------
 -- Global Imports --
+import FRP.Elerea.Param
 import System.IO.Unsafe
 import System.Random
-import Control.Monad
-import FRP.Elerea.Param
 import Data.Maybe
 import Linear.V2
 
@@ -34,11 +33,7 @@ instance Random a => Random (V2 a) where
 initialAsteroids :: [Entity]
 initialAsteroids =
   map (\p -> newAsteroid p $ V2 5 5) positions
-  where positions =
-    unsafePerformIO $
-      sequence $
-        replicate 5 $
-          randomRIO (V2 0 0, V2 100 100)
+  where positions = unsafePerformIO $ sequence $ replicate 5 $ randomRIO (V2 0 0, V2 100 100)
           
 ----------
 -- Code --
