@@ -55,9 +55,10 @@ shouldSpawn = periodically spawnRate $ pure True
 enemyPosition :: SignalGen Float (Signal (V2 Float))
 enemyPosition = do
   sH <- sgMap (^. _y) renderSize
+  let sOffset = fmap (/10) sH
 
   sX <- sgMap (^. _x) renderSize
-  sY <- fmap join $ generator $ (\h -> randomRGen (0, h)) <$> sH
+  sY <- fmap join $ generator $ (\o h -> randomRGen (o, h - o)) <$> sOffset <*> sH
 
   return $ V2 <$> sX <*> sY
 
