@@ -22,12 +22,16 @@ sgMap :: (a -> b) -> SignalGen Float (Signal a) -> SignalGen Float (Signal b)
 sgMap fn sg =
   fmap (fmap fn) sg
 
--- | Getting the delta time in a @'SignalGen' ('Signal' 'Float')@.
-deltaTime :: SignalGen Float (Signal Float)
-deltaTime =
-  stateful 0 deltaTime'
-  where deltaTime' :: Float -> Float -> Float
-        deltaTime' dt _ = dt
+-- | Getting the total time that's passed since the network started.
+totalTime :: SignalGen Float (Signal Float)
+totalTime =
+  stateful 0 totalTime'
+  where totalTime' :: Float -> Float -> Float
+        totalTime' dt t = t + dt
+        
+-- | Getting the player's current score.
+currentScore :: SignalGen Float (Signal Int)
+currentScore = sgMap floor totalTime
 
 -- | A @'SignalGen'@ that ticks every so often with a @'True'@.
 periodically :: Float -> Signal Bool -> SignalGen Float (Signal Bool)
