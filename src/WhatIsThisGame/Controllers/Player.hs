@@ -28,7 +28,7 @@ playerPosition = V2 5 30
 
 -- | The size of a player.
 playerSize :: V2 Float
-playerSize = V2 20 10
+playerSize = V2 12 12
 
 -- | The acceleration speed of the player.
 playerAccelSpeed :: Float
@@ -142,7 +142,7 @@ movePlayer y = do
 -- | The transform to animate the player.
 animatePlayer :: SignalGen Float (Signal EntityTransform)
 animatePlayer =
-  animateTransform True animation 0.1
+  animateTransform True animation 0.2
   where animation = Animation [ "res/player/01.png"
                               , "res/player/02.png"
                               , "res/player/03.png"
