@@ -15,6 +15,7 @@ import Linear.V2
 -- Local Imports --
 import WhatIsThisGame.Controllers.EnemySpawner
 import WhatIsThisGame.Controllers.Background
+import WhatIsThisGame.Controllers.Asteroids
 import WhatIsThisGame.Controllers.Bullet
 import WhatIsThisGame.Controllers.Player
 import WhatIsThisGame.Input
@@ -24,7 +25,8 @@ import WhatIsThisGame.Data
 ----------
 -- Code --
 
--- | Joining a bunch of @'SpriteBatch'@es contained in a @'Renders'@.
+-- | Joining a bunch of @'SpriteBatch'@es contained in a @'Renders'@. NOTE: It
+--   automatically assumes that each @'Sprite'@ is THE SAME.
 joinSpriteBatches :: Renders -> SpriteBatch
 joinSpriteBatches =
   foldl joinSpriteBatch (SpriteBatch [])
@@ -32,12 +34,17 @@ joinSpriteBatches =
         joinSpriteBatch (SpriteBatch rs1) (SpriteBatch rs2) =
           SpriteBatch $ rs1 ++ rs2
 
+-- | Making the final @'SpriteBatch'@ for a list of @'Renderable'@s.
+makeSpriteBatch :: Renderable a => Assets -> [a] -> SpriteBatch
+makeSpriteBatch assets = joinSpriteBatches . foldl (++) [] . map (render assets)
+
 -- | Providing the rendering for the @'World'@.
 instance Renderable World where
   render assets w =
-    [ joinSpriteBatches $ foldl (++) [] $ map (render assets) $ worldGetBackgrounds w
-    , joinSpriteBatches $ foldl (++) [] $ map (render assets) $ worldGetEnemies     w
-    , joinSpriteBatches $ foldl (++) [] $ map (render assets) $ worldGetBullets     w
+    [ makeSpriteBatch assets $ worldGetBackgrounds w
+    , makeSpriteBatch assets $ worldGetAsteroids   w
+    , makeSpriteBatch assets $ worldGetEnemies     w
+    , makeSpriteBatch assets $ worldGetBullets     w
     , head $ render assets $ worldGetPlayer w
     ]
 
@@ -46,6 +53,7 @@ initialWorld :: Entity -> World
 initialWorld p =
   World { worldGetPlayer      = p
         , worldGetBackgrounds = []
+        , worldGetAsteroids   = []
         , worldGetEnemies     = []
         , worldGetBullets     = []
         , worldGetScore       = 0
@@ -57,6 +65,7 @@ world' w = do
   y <- renderSize >>= (fmap calcPos . snapshot)
 
   bs  <- backgrounds w
+  as  <- asteroids w
   es  <- enemies w
   p   <- sgMap fromJust $ player y w
   t   <- periodically 0.25 $ fmap shouldShoot p
@@ -65,6 +74,7 @@ world' w = do
 
   delay (initialWorld $ initialPlayer y) $ World <$> p
                                                  <*> bs
+                                                 <*> as
                                                  <*> es
                                                  <*> bus
                                                  <*> s

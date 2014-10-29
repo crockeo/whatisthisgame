@@ -248,6 +248,7 @@ type EntityTransform = (Entity -> Maybe Entity)
 -- | Specifying the @'World'@ type.
 data World = World { worldGetPlayer      :: Entity
                    , worldGetBackgrounds :: [Entity]
+                   , worldGetAsteroids   :: [Entity]
                    , worldGetEnemies     :: [Entity]
                    , worldGetBullets     :: [Bullet]
                    , worldGetScore       :: Int
