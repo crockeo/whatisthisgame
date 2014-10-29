@@ -46,8 +46,10 @@ loadAssets =
     , SpriteLoad "res/player/02.png"
     , SpriteLoad "res/player/03.png"
     , SpriteLoad "res/player/04.png"
-    
-    , SpriteLoad "res/enemy.png"
+  
+    , SpriteLoad "res/enemy/01.png"
+    , SpriteLoad "res/enemy/02.png"
+    , SpriteLoad "res/enemy/03.png"
 
     , SpriteLoad "res/background.png"
     , SpriteLoad "res/bullet.png"

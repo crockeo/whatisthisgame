@@ -17,6 +17,24 @@ import FRP.Elerea.Param
 (!!.) :: SignalGen p (Signal (b -> c)) -> SignalGen p (Signal (a -> b)) -> SignalGen p (Signal (a -> c))
 (!!.) s1 s2 = (!.) <$> s1 <*> s2
 
+-- | Composing functions contained with @'SignalGen'@s using @'(>>=)'@.
+(!!=) :: Monad m
+      => SignalGen p (Signal (b -> m c))
+      -> SignalGen p (Signal (a -> m b))
+      -> SignalGen p (Signal (a -> m c))
+(!!=) sgb sga = do
+  sa <- sga
+  sb <- sgb
+  
+  return $ do
+    fa <- sa
+    fb <- sb
+    
+    return (\a -> do
+      b <- fa a
+      fb b)
+  
+
 -- | Mapping a function over a @'SignalGen'@.
 sgMap :: (a -> b) -> SignalGen Float (Signal a) -> SignalGen Float (Signal b)
 sgMap fn sg =

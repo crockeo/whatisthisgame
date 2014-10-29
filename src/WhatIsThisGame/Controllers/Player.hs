@@ -113,9 +113,9 @@ calcSpeed  True False = playerMoveSpeed - playerMoveSpeed / 2
 -- | Constructing the function to transform an @'Entity'@.
 makeUpdate :: Float -> Bool -> EntityTransform
 makeUpdate pos skd =
-  \e -> e { getPosition = getPosition e & _y .~ pos
-          , shouldShoot = skd
-          }
+  \e -> Just e { getPosition = getPosition e & _y .~ pos
+               , shouldShoot = skd
+               }
 
 -- | An alternate version of @'initialPlayer'@ that always centers the player.
 initialPlayer :: Float -> Entity
@@ -131,13 +131,13 @@ initialPlayer y =
 shootPlayer :: SignalGen Float (Signal EntityTransform)
 shootPlayer = do
   sskd <- keyDown (CharKey ' ')
-  return $ fmap (\skd -> \e -> e { shouldShoot = skd }) sskd
+  return $ fmap (\skd -> \e -> Just e { shouldShoot = skd }) sskd
 
 -- | Moving the palyer.
 movePlayer :: Float -> SignalGen Float (Signal EntityTransform)
 movePlayer y = do
   spos <- mfix $ yPosition y
-  return $ fmap (\pos -> \e -> e { getPosition = getPosition e & _y .~ pos }) spos
+  return $ fmap (\pos -> \e -> Just e { getPosition = getPosition e & _y .~ pos }) spos
 
 -- | The transform to animate the player.
 animatePlayer :: SignalGen Float (Signal EntityTransform)
@@ -152,10 +152,10 @@ animatePlayer =
 -- | The controller for the player.
 playerController :: Float -> SignalGen Float (Signal EntityTransform)
 playerController y   = shootPlayer
-                   !!. movePlayer y
-                   !!. animatePlayer
+                   !!= movePlayer y
+                   !!= animatePlayer
 
 -- | The composed player @'Entity'@ being run by the @'playerController'@.
-player :: Float -> Signal World -> SignalGen Float (Signal Entity)
+player :: Float -> Signal World -> SignalGen Float (Signal (Maybe Entity))
 player y _ = do
   playerController y >>= entity (initialPlayer y)

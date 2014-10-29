@@ -18,13 +18,17 @@ import WhatIsThisGame.Data
 -- Code --
 
 -- | The back-end for updating an @'Entity'@.
-entity' :: Entity -> Signal EntityTransform -> Signal Entity -> SignalGen Float (Signal Entity)
-entity' e set se = delay e $ set <*> se
+entity' :: Entity -> Signal EntityTransform -> Signal (Maybe Entity) -> SignalGen Float (Signal (Maybe Entity))
+entity' e set sme =
+  delay (Just e) $ do
+    et <- set
+    me <- sme
+    return $ me >>= et
 
 -- | The front-end for updating an @'Entity'@.
-entity :: Entity -> Signal EntityTransform -> SignalGen Float (Signal Entity)
+entity :: Entity -> Signal EntityTransform -> SignalGen Float (Signal (Maybe Entity))
 entity e set = mfix $ entity' e set
 
 -- | Creating a number of entities.
-entities :: [(Entity, Signal EntityTransform)] -> SignalGen Float (Signal [Entity])
+entities :: [(Entity, Signal EntityTransform)] -> SignalGen Float (Signal [Maybe Entity])
 entities eps = sequence <$> mapM (uncurry entity) eps

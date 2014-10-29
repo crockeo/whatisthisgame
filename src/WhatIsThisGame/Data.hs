@@ -243,7 +243,7 @@ onGround e = (getPosition e ^. _y) <= groundHeight
 -- | An alternative type to be used instead of the @'EntityUpdate'@ type. It
 --   works by creating one through an @'Entity'@ controller and then applying
 --   it to an @'Entity'@ to create the next @'Entity'@ for the frame.
-type EntityTransform = (Entity -> Entity)
+type EntityTransform = (Entity -> Maybe Entity)
 
 -- | Specifying the @'World'@ type.
 data World = World { worldGetPlayer      :: Entity

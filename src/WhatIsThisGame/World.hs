@@ -8,6 +8,7 @@ import Control.Applicative
 import Control.Monad.Fix
 import FRP.Elerea.Param
 import Control.Lens
+import Data.Maybe
 import Linear.V2
 
 -------------------
@@ -56,7 +57,7 @@ world' w = do
 
   bs  <- backgrounds w
   es  <- enemies w
-  p   <- player y w
+  p   <- sgMap fromJust $ player y w
   t   <- periodically 0.25 $ fmap shouldShoot p
   bus <- bullets w t (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
 
