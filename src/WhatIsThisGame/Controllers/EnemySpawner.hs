@@ -64,7 +64,7 @@ enemyPosition = do
 -- | Making a new enemy.
 newEnemy :: V2 Float -> Float -> Entity
 newEnemy pos s =
-  Entity { getName     = "res/enemy.png"
+  Entity { getName     = "res/enemy/01.png"
          , getPosition = pos - size / 2
          , getSize     = size
          , getHealth   = 1
