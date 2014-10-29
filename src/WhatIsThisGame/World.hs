@@ -48,6 +48,7 @@ initialWorld p =
         , worldGetBackgrounds = []
         , worldGetEnemies     = []
         , worldGetBullets     = []
+        , worldGetScore       = 0
         }
 
 -- | Providing the back-end to the @'world'@ function.
@@ -60,11 +61,13 @@ world' w = do
   p   <- sgMap fromJust $ player y w
   t   <- periodically 0.25 $ fmap shouldShoot p
   bus <- bullets w t (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
+  s   <- currentScore
 
   delay (initialWorld $ initialPlayer y) $ World <$> p
                                                  <*> bs
                                                  <*> es
                                                  <*> bus
+                                                 <*> s
   where calcPos :: V2 Float -> Float
         calcPos (V2 _ h) = (h / 2) - (playerSize ^. _y / 2)
 
