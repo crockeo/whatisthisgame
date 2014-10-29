@@ -43,31 +43,30 @@ minSpeed :: Float
 minSpeed = playerAccelSpeed / 100
 
 -- | The acceleration in the y-axis.
-yAccel :: Signal Float -> SignalGen Float (Signal Float)
-yAccel svel = do
+yAccel :: SignalGen Float (Signal Float)
+yAccel = do
   ukd <- keyDown (CharKey 'W')
   dkd <- keyDown (CharKey 'S')
 
-  return $ yAccel' <$> ukd <*> dkd <*> svel
-  where yAccel' :: Bool -> Bool -> Float -> Float
-        yAccel'  True False   _ =  playerAccelSpeed
-        yAccel' False  True   _ = -playerAccelSpeed
-        yAccel'   ukd   dkd vel
-          | vel < 0   = if ukd then  playerAccelSpeed * 2 else  playerAccelSpeed
-          | vel > 0   = if dkd then -playerAccelSpeed * 2 else -playerAccelSpeed
-          | otherwise =  0
+  return $ yAccel' <$> ukd <*> dkd
+  where yAccel' :: Bool -> Bool -> Float
+        yAccel'  True False =  playerAccelSpeed
+        yAccel' False  True = -playerAccelSpeed
+        yAccel' False False =  0
+        yAccel'  True  True =  0
 
 -- | The velocity in the y-axis.
-yVelocity :: Signal Bool -> Signal Float -> SignalGen Float (Signal Float)
-yVelocity sbounce svel = do
-  sacc  <- yAccel svel
-  svel' <- transfer2 0 yVelocity' sbounce sacc
-  delay 0 svel'
+yVelocity :: Signal Bool -> SignalGen Float (Signal Float)
+yVelocity sbounce = do
+  sacc  <- yAccel
+  sgMap bound $ transfer2 0 yVelocity' sbounce sacc
   where yVelocity' :: Float -> Bool -> Float -> Float -> Float
-        yVelocity' dt b acc vel =
-          bound $ if b
-            then -vel / 1.5
-            else  vel + acc * dt
+        yVelocity' dt b acc vel
+          | acc == 0  = vel / 1.3
+          | otherwise =
+            if b
+              then -vel / 1.5
+              else vel + acc * dt
 
         bound :: Float -> Float
         bound vel
@@ -89,7 +88,7 @@ yPosition :: Float -> Signal Float -> SignalGen Float (Signal Float)
 yPosition y spos = do
   ssize   <- renderSize
   sbounce <- bounce spos
-  svel    <- mfix $ yVelocity sbounce
+  svel    <- yVelocity sbounce
   spos'   <- transfer2 y yPosition' svel $ fmap (^. _y) ssize
   delay y $ spos'
   where yPosition' :: Float -> Float -> Float -> Float -> Float
@@ -102,13 +101,6 @@ yPosition y spos = do
           | pos                      <    0 = 0
           | pos + (playerSize ^. _y) > size = size - (playerSize ^. _y)
           | otherwise                       = pos
-
--- | Calculating the speed of the player.
-calcSpeed :: Bool -> Bool -> Float
-calcSpeed False False = playerMoveSpeed
-calcSpeed  True  True = playerMoveSpeed
-calcSpeed False  True = playerMoveSpeed + playerMoveSpeed / 2
-calcSpeed  True False = playerMoveSpeed - playerMoveSpeed / 2
 
 -- | Constructing the function to transform an @'Entity'@.
 makeUpdate :: Float -> Bool -> EntityTransform
