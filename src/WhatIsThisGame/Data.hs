@@ -252,4 +252,5 @@ data World = World { worldGetPlayer      :: Entity
                    , worldGetEnemies     :: [Entity]
                    , worldGetBullets     :: [Bullet]
                    , worldGetScore       :: Int
+                   , worldGetLives       :: Int
                    }

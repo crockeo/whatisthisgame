@@ -74,16 +74,16 @@ newEnemy pos s =
   where size = V2 (s * 1.618) s
 
 -- | Stepping a single @'Entity'@ that represents an enemy.
-stepEnemy :: Float -> Float -> (Maybe Entity, [Bullet]) -> Maybe Entity
+stepEnemy :: Float -> Float -> (Maybe Entity, [Bullet]) -> (Maybe Entity, Bool)
 stepEnemy dt spd (me, bus) =
   case me of
-    Nothing -> Nothing
+    Nothing -> (Nothing, False)
     Just e  ->
       let width  = getSize e ^. _x
           newPos = getPosition e + V2 (spd * dt) 0 in
         if (newPos ^. _x) + width < 0
-          then Nothing
-          else findDeath bus $ e { getPosition = newPos }
+          then (Nothing, True)
+          else (findDeath bus $ e { getPosition = newPos }, False)
   where findDeath :: [Bullet] -> Entity -> Maybe Entity
         findDeath []     e = Just e
         findDeath (b:bs) e =
@@ -92,12 +92,15 @@ stepEnemy dt spd (me, bus) =
             else findDeath bs e
 
 -- | Stepping a whole list of enemies.
-stepEnemies :: Float -> Float -> [Bullet] -> [Maybe Entity] -> [Maybe Entity]
+stepEnemies :: Float -> Float -> [Bullet] -> [Maybe Entity] -> ([Maybe Entity], Bool)
 stepEnemies dt spd bus =
-  map (stepEnemy dt spd) . pair bus
+  orSnd . unzip . map (stepEnemy dt spd) . pair bus
   where pair :: b -> [a] -> [(a, b)]
         pair _    []  = []
         pair b (a:as) = (a, b) : pair b as
+        
+        orSnd :: (a, [Bool]) -> (a, Bool)
+        orSnd (a, bs) = (a, foldl (||) False bs)
 
 -- | Maybe adding a new @'Entity'@ to the list.
 maybeAppendEnemy :: Bool -> V2 Float -> Float -> [Maybe Entity] -> [Maybe Entity]
@@ -106,18 +109,29 @@ maybeAppendEnemy  True pos size l =
   (Just $ newEnemy pos size) : l
 
 -- | The list of simulated enemies.
-maybeEnemies :: Signal World -> Signal Bool -> Signal [Maybe Entity] -> SignalGen Float (Signal [Maybe Entity])
-maybeEnemies sWorld sMake sMes = do
+maybeEnemies :: Signal World
+             -> Signal Bool
+             -> Signal ([Maybe Entity], Bool)
+             -> SignalGen Float (Signal ([Maybe Entity], Bool))
+maybeEnemies sWorld sMake sBlob = do
+  let sMes = fmap fst sBlob
   sPos  <- enemyPosition
   sSpd  <- currentSpeed
   sSize <- randomRGen (5, 10)
   dt    <- input
   
-  delay [] $ stepEnemies <$> dt <*> sSpd <*> fmap worldGetBullets sWorld <*>
-    (maybeAppendEnemy <$> sMake <*> sPos <*> sSize <*> sMes)
+  let mes = stepEnemies <$> dt <*> sSpd <*> fmap worldGetBullets sWorld <*>
+              (maybeAppendEnemy <$> sMake <*> sPos <*> sSize <*> sMes)
+  
+  delay ([], False) mes
+
+-- | Mapping a value over the first signal in a pair of signals contained within
+--   a SignalGen
+mapFst :: (a -> c) -> SignalGen Float (Signal (a, b)) -> SignalGen Float (Signal (c, b))
+mapFst fn = sgMap (\(a, b) -> (fn a, b))
 
 -- | The list of simulated enemies - with all of the dead ones filtered out.
-enemies :: Signal World -> SignalGen Float (Signal [Entity])
+enemies :: Signal World -> SignalGen Float (Signal ([Entity], Bool))
 enemies sw = do
   ss <- shouldSpawn
-  sgMap (catMaybes) $ mfix $ maybeEnemies sw ss
+  mapFst catMaybes $ mfix $ maybeEnemies sw ss

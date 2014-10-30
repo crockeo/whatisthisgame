@@ -18,6 +18,7 @@ import WhatIsThisGame.Controllers.Background
 import WhatIsThisGame.Controllers.Asteroids
 import WhatIsThisGame.Controllers.Bullet
 import WhatIsThisGame.Controllers.Player
+import WhatIsThisGame.Controllers.Lives
 import WhatIsThisGame.Input
 import WhatIsThisGame.Utils
 import WhatIsThisGame.Data
@@ -57,6 +58,7 @@ initialWorld p =
         , worldGetEnemies     = []
         , worldGetBullets     = []
         , worldGetScore       = 0
+        , worldGetLives       = initialLives
         }
 
 -- | Providing the back-end to the @'world'@ function.
@@ -66,18 +68,20 @@ world' w = do
 
   bs  <- backgrounds w
   as  <- asteroids w
-  es  <- enemies w
+  esd <- enemies w
   p   <- sgMap fromJust $ player y w
   t   <- periodically 0.25 $ fmap shouldShoot p
   bus <- bullets w t (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
   s   <- currentScore
+  ls  <- calculateLives $ fmap snd esd
 
   delay (initialWorld $ initialPlayer y) $ World <$> p
                                                  <*> bs
                                                  <*> as
-                                                 <*> es
+                                                 <*> fmap fst esd
                                                  <*> bus
                                                  <*> s
+                                                 <*> ls
   where calcPos :: V2 Float -> Float
         calcPos (V2 _ h) = (h / 2) - (playerSize ^. _y / 2)
 
