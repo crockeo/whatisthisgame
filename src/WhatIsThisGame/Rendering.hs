@@ -9,6 +9,7 @@ import Graphics.Rendering.OpenGL hiding ( Shader
                                         )
 
 import Data.Foldable hiding (foldl1, mapM_)
+import Graphics.Rendering.FTGL
 import Control.Applicative
 import Graphics.VinylGL
 import Graphics.GLUtil
@@ -70,7 +71,22 @@ actuallyPerformRender cm (Shader sp) (SpriteBatch rs) = do
   deleteObjectName eb
   deleteVAO vao
 
--- | Performing a render.
+-- | Rendering a @'SpriteBatch'@.
+renderSpriteBatch :: CamMatrix -> Shader -> SpriteBatch -> IO ()
+renderSpriteBatch = actuallyPerformRender
+
+-- | Rendering a @'TextRender'@.
+renderText :: CamMatrix -> Shader -> TextRender -> IO ()
+renderText _ _ (TextRender font string (V2 width height) _) = do
+  setFontFaceSize font width height
+  renderFont font string All
+
+-- | Performing a bunch of @'Renders'@.
 performRender :: CamMatrix -> Shader -> Renders -> IO ()
-performRender cm sp rs =
-  mapM_ (actuallyPerformRender cm sp) rs
+performRender  _ _    []  = return ()
+performRender cm s (r:rs) = do
+  case r of
+    (RenderSprite  sr) -> renderSpriteBatch cm s $ SpriteBatch [sr]
+    (RenderSprites sb) -> renderSpriteBatch cm s  sb
+    (RenderText    tr) -> renderText        cm s  tr
+  performRender cm s rs

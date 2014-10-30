@@ -153,16 +153,23 @@ instance Monoid Assets where
            , getFonts   = getFonts   a1 `mappend` getFonts   a2
            }
 
--- | A pure form of render calls. Can be optimized pre-render to increase
---   performance.
-data Render = SpriteRender Sprite (V2 Float) (V2 Float)
+-- | A datatype representing a @'Sprite'@ render.
+data SpriteRender = SpriteRender Sprite (V2 Float) (V2 Float)
 
--- | A type to represent a batch of @'Sprite's@ to render. They should ALL have
---   the same @'Sprite'@.
-data SpriteBatch = SpriteBatch [Render]
+-- | A datatype representing multiple @'Sprite'@ renders - grouped by if they
+--   share the same @'Sprite'@.
+newtype SpriteBatch = SpriteBatch [SpriteRender]
 
--- | A type to represent multiple @'Render'@ calls.
-type Renders = [SpriteBatch]
+-- | A datatype representing a @'Font'@ render.
+data TextRender = TextRender Font String (V2 Int) (V2 Float)
+
+-- | A datatype to represent a bunch of renders.
+data Render = RenderSprite  SpriteRender
+            | RenderSprites SpriteBatch
+            | RenderText    TextRender
+
+-- | A type to represent multiple @'Render'@ calls in succession.
+type Renders = [Render]
 
 -- | A synonym for map's access function.
 (!) :: Ord a => Map.Map a b -> a -> b
@@ -183,10 +190,9 @@ data Entity = Entity { getName        :: String
 -- | Rendering an entity.
 instance Renderable Entity where
   render assets e =
-    [ SpriteBatch [ SpriteRender (getSprites assets ! getName e)
-                                 (getPosition e)
-                                 (getSize     e)
-                  ]
+    [ RenderSprite $ SpriteRender (getSprites assets ! getName e)
+                                  (getPosition e)
+                                  (getSize     e)
     ]
     
 -- | Allowing an @'Entity'@ to check collision.
@@ -211,10 +217,9 @@ data Bullet = Bullet { getBulletType     :: BulletType
 -- | Rendering a bullet.
 instance Renderable Bullet where
   render assets b =
-    [ SpriteBatch [ SpriteRender (getSprites assets ! getSpriteName b)
-                                 (getBulletPosition b)
-                                 (getBulletSize b)
-                  ]
+    [ RenderSprite $ SpriteRender (getSprites assets ! getSpriteName b)
+                                  (getBulletPosition b)
+                                  (getBulletSize b)
     ]
     where getSpriteName :: Bullet -> String
           getSpriteName bt =

@@ -33,7 +33,7 @@ loadShader = liftM Shader . loadShaderFamily
 
 -- | The raw backend for loading a @'Font'@.
 loadFont :: FilePath -> IO Font
-loadFont = createOutlineFont
+loadFont = createPolygonFont
 
 -- | Performing a single asset load.
 performLoad :: AssetLoad -> IO Assets

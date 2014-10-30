@@ -26,6 +26,7 @@ import WhatIsThisGame.Data
 ----------
 -- Code --
 
+{-
 -- | Joining a bunch of @'SpriteBatch'@es contained in a @'Renders'@. NOTE: It
 --   automatically assumes that each @'Sprite'@ is THE SAME.
 joinSpriteBatches :: Renders -> SpriteBatch
@@ -38,15 +39,32 @@ joinSpriteBatches =
 -- | Making the final @'SpriteBatch'@ for a list of @'Renderable'@s.
 makeSpriteBatch :: Renderable a => Assets -> [a] -> SpriteBatch
 makeSpriteBatch assets = joinSpriteBatches . foldl (++) [] . map (render assets)
+-}
+
+-- | Prepending a @'SpriteRender'@ to a @'SpriteBatch'@.
+prependSpriteRender :: SpriteRender -> SpriteBatch -> SpriteBatch
+prependSpriteRender sr (SpriteBatch ss) = SpriteBatch $ sr : ss
+
+-- | Joining a @'[Renders]'@ (which should represent a bunch of single
+--   @'RenderSprite'@ calls) into a single @'Render'@ that contains a
+--   @'RenderSprites'@.
+makeRenderSprites :: Renderable a => Assets -> [a] -> Render
+makeRenderSprites assets =
+  foldl join (RenderSprites $ SpriteBatch []). foldl (++) [] . map (render assets)
+  where join :: Render -> Render -> Render
+        join (RenderSprite  s1) (RenderSprite  s2) = RenderSprites $ SpriteBatch [s1, s2]
+        join (RenderSprite  sr) (RenderSprites ss) = RenderSprites $ prependSpriteRender sr ss
+        join (RenderSprites ss) (RenderSprite  sr) = RenderSprites $ prependSpriteRender sr ss
+        join                 _                  _  = error "This should not be happening."
 
 -- | Providing the rendering for the @'World'@.
 instance Renderable World where
   render assets w =
-    [ makeSpriteBatch assets $ worldGetBackgrounds w
-    , makeSpriteBatch assets $ worldGetAsteroids   w
-    , makeSpriteBatch assets $ worldGetEnemies     w
-    , makeSpriteBatch assets $ worldGetBullets     w
-    , head $ render assets $ worldGetPlayer w
+    [ makeRenderSprites assets $ worldGetBackgrounds w
+    , makeRenderSprites assets $ worldGetAsteroids   w
+    , makeRenderSprites assets $ worldGetEnemies     w
+    , makeRenderSprites assets $ worldGetBullets     w
+    , head $ render assets     $ worldGetPlayer      w
     ]
 
 -- | The initial state of the world.
