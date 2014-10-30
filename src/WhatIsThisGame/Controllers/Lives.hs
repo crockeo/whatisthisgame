@@ -7,14 +7,6 @@ module WhatIsThisGame.Controllers.Lives ( initialLives
 --------------------
 -- Global Imports --
 import FRP.Elerea.Param
-import Control.Lens
-import Linear.V2
-
-import Debug.Trace
-
--------------------
--- Local Imports --
-import WhatIsThisGame.Data
 
 ----------
 -- Code --
@@ -28,5 +20,5 @@ calculateLives :: Signal Bool -> SignalGen Float (Signal Int)
 calculateLives =
   transfer initialLives calculateLives'
   where calculateLives' :: Float -> Bool -> Int -> Int
-        calculateLives' _ False n = traceShow n n
+        calculateLives' _ False n = n
         calculateLives' _  True n = n - 1
