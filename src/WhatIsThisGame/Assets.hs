@@ -4,8 +4,9 @@ module WhatIsThisGame.Assets (loadAssets) where
 --------------------
 -- Global Imports --
 import Graphics.Rendering.OpenGL hiding (Shader)
-import qualified Data.Map.Strict as Map
 import Graphics.GLUtil hiding (loadShader)
+import qualified Data.Map.Strict as Map
+import Graphics.Rendering.FTGL
 import Control.Monad
 import Data.Monoid
 
@@ -30,43 +31,39 @@ loadSprite fp = do
 loadShader :: FilePath -> IO Shader
 loadShader = liftM Shader . loadShaderFamily
 
+-- | The raw backend for loading a @'Font'@.
+loadFont :: FilePath -> IO Font
+loadFont = createOutlineFont
+
 -- | Performing a single asset load.
 performLoad :: AssetLoad -> IO Assets
 performLoad (SpriteLoad fp) = liftM (\sprite -> mempty { getSprites = Map.fromList [(fp, sprite)] }) $ loadSprite fp
 performLoad (ShaderLoad fp) = liftM (\shader -> mempty { getShaders = Map.fromList [(fp, shader)] }) $ loadShader fp
+performLoad (FontLoad   fp) = liftM (\font   -> mempty { getFonts   = Map.fromList [(fp, font  )] }) $ loadFont   fp
 performLoad (AssetLoads l ) = liftM mconcat $ mapM performLoad l
+
+-- | Generating a lod string for a number of frames.
+generateLoadFrames :: Int -> String -> [AssetLoad]
+generateLoadFrames cap prefix =
+  [SpriteLoad $ prefix ++ formatString n ++ ".png" | n <- [1 .. cap]]
+  where formatString :: Int -> String
+        formatString n
+          | n < 10    = "0" ++ show n
+          | otherwise =        show n
 
 -- | The list of assets I require.
 loadAssets :: IO Assets
 loadAssets =
-  performLoad $ mconcat
+  performLoad $ mconcat $
     [ ShaderLoad "res/game2d"
-
-    , SpriteLoad "res/player/01.png"
-    , SpriteLoad "res/player/02.png"
-    , SpriteLoad "res/player/03.png"
-    , SpriteLoad "res/player/04.png"
-  
-    , SpriteLoad "res/enemy/01.png"
-    , SpriteLoad "res/enemy/02.png"
-    , SpriteLoad "res/enemy/03.png"
     
-    , SpriteLoad "res/asteroid/01/01.png"
-    , SpriteLoad "res/asteroid/01/02.png"
-    , SpriteLoad "res/asteroid/01/03.png"
-    , SpriteLoad "res/asteroid/01/04.png"
-    , SpriteLoad "res/asteroid/01/05.png"
-    , SpriteLoad "res/asteroid/01/06.png"
-    , SpriteLoad "res/asteroid/01/07.png"
-    , SpriteLoad "res/asteroid/01/08.png"
-    , SpriteLoad "res/asteroid/01/09.png"
-    , SpriteLoad "res/asteroid/01/10.png"
-    , SpriteLoad "res/asteroid/01/11.png"
-    , SpriteLoad "res/asteroid/01/12.png"
-    , SpriteLoad "res/asteroid/01/13.png"
-    , SpriteLoad "res/asteroid/01/14.png"
-    , SpriteLoad "res/asteroid/01/15.png"
-
     , SpriteLoad "res/background.png"
     , SpriteLoad "res/bullet.png"
-    ]
+    
+    , FontLoad "res/speculo.ttf"
+    , FontLoad "res/speculum.ttf"
+    ] ++
+    
+    generateLoadFrames  4 "res/player/"      ++
+    generateLoadFrames  3 "res/enemy/"       ++
+    generateLoadFrames 15 "res/asteroid/01/"

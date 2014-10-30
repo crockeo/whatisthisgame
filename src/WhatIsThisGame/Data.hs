@@ -15,6 +15,7 @@ import Graphics.Rendering.OpenGL hiding ( Shader
 
 import qualified Data.Map.Strict as Map
 import Graphics.UI.GLFW as GLFW
+import Graphics.Rendering.FTGL
 import Data.Vinyl.Universe
 import Graphics.GLUtil
 import Linear.Matrix
@@ -119,6 +120,7 @@ newtype Shader = Shader ShaderProgram
 -- | An abstract representation of a request to load an asset.
 data AssetLoad = SpriteLoad FilePath
                | ShaderLoad FilePath
+               | FontLoad   FilePath
                | AssetLoads [AssetLoad]
 
 -- | Allowing @'AssetLoad'@s to be joined together into one nebulous
@@ -134,6 +136,7 @@ instance Monoid AssetLoad where
 -- | An API for accessing assets.
 data Assets = Assets { getSprites :: Map.Map FilePath Sprite
                      , getShaders :: Map.Map FilePath Shader
+                     , getFonts   :: Map.Map FilePath Font
                      }
 
 -- | Allowing different @'Assets'@ to be joined. Primarily for easier loading
@@ -141,11 +144,13 @@ data Assets = Assets { getSprites :: Map.Map FilePath Sprite
 instance Monoid Assets where
   mempty = Assets { getSprites = mempty
                   , getShaders = mempty
+                  , getFonts   = mempty
                   }
 
-  mappend (Assets sp1 sh1) (Assets sp2 sh2) =
-    Assets { getSprites = sp1 `mappend` sp2
-           , getShaders = sh1 `mappend` sh2
+  mappend a1 a2 =
+    Assets { getSprites = getSprites a1 `mappend` getSprites a2
+           , getShaders = getShaders a1 `mappend` getShaders a2
+           , getFonts   = getFonts   a1 `mappend` getFonts   a2
            }
 
 -- | A pure form of render calls. Can be optimized pre-render to increase
