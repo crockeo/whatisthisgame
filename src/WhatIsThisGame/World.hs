@@ -65,6 +65,11 @@ instance Renderable World where
     , makeRenderSprites assets $ worldGetEnemies     w
     , makeRenderSprites assets $ worldGetBullets     w
     , head $ render assets     $ worldGetPlayer      w
+    
+    , RenderText $ TextRender (getFonts assets ! "res/speculum.ttf")
+                              "Testing"
+                              (V2 0 0)
+                              1
     ]
 
 -- | The initial state of the world.

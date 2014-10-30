@@ -77,16 +77,19 @@ renderSpriteBatch = actuallyPerformRender
 
 -- | Rendering a @'TextRender'@.
 renderText :: CamMatrix -> Shader -> TextRender -> IO ()
-renderText _ _ (TextRender font string (V2 width height) _) = do
-  setFontFaceSize font width height
+renderText cm (Shader sp) (TextRender font string _ _) = do
+  currentProgram $= Just (program sp)
+  setUniforms sp cm
+  
+  setFontFaceSize font 1 1
   renderFont font string All
 
 -- | Performing a bunch of @'Renders'@.
-performRender :: CamMatrix -> Shader -> Renders -> IO ()
+performRender :: CamMatrix -> (Shader, Shader) -> Renders -> IO ()
 performRender  _ _    []  = return ()
-performRender cm s (r:rs) = do
+performRender cm sp@(ss, ts) (r:rs) = do
   case r of
-    (RenderSprite  sr) -> renderSpriteBatch cm s $ SpriteBatch [sr]
-    (RenderSprites sb) -> renderSpriteBatch cm s  sb
-    (RenderText    tr) -> renderText        cm s  tr
-  performRender cm s rs
+    (RenderSprite  sr) -> renderSpriteBatch cm ss $ SpriteBatch [sr]
+    (RenderSprites sb) -> renderSpriteBatch cm ss  sb
+    (RenderText    tr) -> renderText        cm ts  tr
+  performRender cm sp rs

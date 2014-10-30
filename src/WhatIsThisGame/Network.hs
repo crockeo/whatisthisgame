@@ -34,7 +34,7 @@ runNetwork' closedRef cam assets sfn = do
       a <- sfn dt
 
       let cm = (SField =: camMatrix cam)
-          sp = getShaders assets ! "res/game2d"
+          sp = (getShaders assets ! "res/game2d", getShaders assets ! "res/text")
           r  = render assets a
 
 

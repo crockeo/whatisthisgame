@@ -161,7 +161,7 @@ data SpriteRender = SpriteRender Sprite (V2 Float) (V2 Float)
 newtype SpriteBatch = SpriteBatch [SpriteRender]
 
 -- | A datatype representing a @'Font'@ render.
-data TextRender = TextRender Font String (V2 Int) (V2 Float)
+data TextRender = TextRender Font String (V2 Float) Float
 
 -- | A datatype to represent a bunch of renders.
 data Render = RenderSprite  SpriteRender
