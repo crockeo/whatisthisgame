@@ -67,6 +67,7 @@ actuallyPerformRender cm (Shader sp) (SpriteBatch rs) = do
   setUniforms sp cm
   withVAO vao . withTextures2D tos $ drawIndexedTris (2 * fromIntegral len)
 
+  currentProgram $= Nothing
   deleteVertices verts
   deleteObjectName eb
   deleteVAO vao
@@ -78,9 +79,6 @@ renderSpriteBatch = actuallyPerformRender
 -- | Rendering a @'TextRender'@.
 renderText :: CamMatrix -> Shader -> TextRender -> IO ()
 renderText cm (Shader sp) (TextRender font string _ _) = do
-  currentProgram $= Just (program sp)
-  setUniforms sp cm
-  
   setFontFaceSize font 1 1
   renderFont font string All
 
