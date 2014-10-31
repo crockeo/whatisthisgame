@@ -26,21 +26,6 @@ import WhatIsThisGame.Data
 ----------
 -- Code --
 
-{-
--- | Joining a bunch of @'SpriteBatch'@es contained in a @'Renders'@. NOTE: It
---   automatically assumes that each @'Sprite'@ is THE SAME.
-joinSpriteBatches :: Renders -> SpriteBatch
-joinSpriteBatches =
-  foldl joinSpriteBatch (SpriteBatch [])
-  where joinSpriteBatch :: SpriteBatch -> SpriteBatch -> SpriteBatch
-        joinSpriteBatch (SpriteBatch rs1) (SpriteBatch rs2) =
-          SpriteBatch $ rs1 ++ rs2
-
--- | Making the final @'SpriteBatch'@ for a list of @'Renderable'@s.
-makeSpriteBatch :: Renderable a => Assets -> [a] -> SpriteBatch
-makeSpriteBatch assets = joinSpriteBatches . foldl (++) [] . map (render assets)
--}
-
 -- | Prepending a @'SpriteRender'@ to a @'SpriteBatch'@.
 prependSpriteRender :: SpriteRender -> SpriteBatch -> SpriteBatch
 prependSpriteRender sr (SpriteBatch ss) = SpriteBatch $ sr : ss
@@ -62,14 +47,20 @@ instance Renderable World where
   render assets w =
     [ makeRenderSprites assets $ worldGetBackgrounds w
     , makeRenderSprites assets $ worldGetAsteroids   w
+
+    , RenderText $ TextRender (getFonts assets ! "res/speculum.ttf")
+                              ("Score: " ++ show (worldGetScore w))
+                              (V2 5 5)
+                              4
+
+    , RenderText $ TextRender (getFonts assets ! "res/speculum.ttf")
+                              ("Lives: " ++ show (worldGetLives w))
+                              (V2 5 15)
+                              4
+
     , makeRenderSprites assets $ worldGetEnemies     w
     , makeRenderSprites assets $ worldGetBullets     w
     , head $ render assets     $ worldGetPlayer      w
-    
-    , RenderText $ TextRender (getFonts assets ! "res/speculum.ttf")
-                              "Testing"
-                              (V2 0 0)
-                              1
     ]
 
 -- | The initial state of the world.
@@ -93,7 +84,7 @@ world' w = do
   as  <- asteroids w
   esd <- enemies w
   p   <- sgMap fromJust $ player y w
-  t   <- periodically 0.25 $ fmap shouldShoot p
+  t   <- periodically 0.5 $ fmap shouldShoot p
   bus <- bullets w t (pure PlayerBullet) (fmap getPosition p) (fmap getSize p)
   s   <- currentScore
   ls  <- calculateLives $ fmap snd esd

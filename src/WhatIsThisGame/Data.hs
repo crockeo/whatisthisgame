@@ -100,8 +100,8 @@ blue  = Color $ V4 0 0 1 1
 -- | A type to be used when calculating collision.
 data CollisionRectangle = CollisionRectangle { _crPos  :: V2 Float
                           , _crSize :: V2 Float
-                          } 
-                         
+                          }
+
 -- | This instance defines that a type can be converted to a
 --   @'CollisionRectangle'@, and can therefore be used to calculate collision.
 class Collidable a where
@@ -161,7 +161,7 @@ data SpriteRender = SpriteRender Sprite (V2 Float) (V2 Float)
 newtype SpriteBatch = SpriteBatch [SpriteRender]
 
 -- | A datatype representing a @'Font'@ render.
-data TextRender = TextRender Font String (V2 Float) Float
+data TextRender = TextRender Font String (V2 Float) Int
 
 -- | A datatype to represent a bunch of renders.
 data Render = RenderSprite  SpriteRender
@@ -194,7 +194,7 @@ instance Renderable Entity where
                                   (getPosition e)
                                   (getSize     e)
     ]
-    
+
 -- | Allowing an @'Entity'@ to check collision.
 instance Collidable Entity where
   toCollisionRectangle entity =

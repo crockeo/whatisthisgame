@@ -30,6 +30,7 @@ scaleCoord (V2 x y) = do
   (V2 w h) <- ioRenderSize
   return $ V2 (realToFrac x / w)
               (realToFrac y / h)
+
 -- | Generating a list of vertices for a quad based on a position and a size.
 generateVertices :: (Real a, Fractional b) => V2 a -> V2 a -> IO [V2 b]
 generateVertices p s = do
@@ -51,6 +52,8 @@ tileTex =
 --   calls.
 actuallyPerformRender :: CamMatrix -> Shader -> SpriteBatch -> IO ()
 actuallyPerformRender cm (Shader sp) (SpriteBatch rs) = do
+  loadIdentity
+
   let tos = map (\(SpriteRender (Sprite a) _ _) -> a) rs
       ps  = map (\(SpriteRender         _  a _) -> a) rs
       ss  = map (\(SpriteRender         _  _ a) -> a) rs
@@ -78,8 +81,15 @@ renderSpriteBatch = actuallyPerformRender
 
 -- | Rendering a @'TextRender'@.
 renderText :: CamMatrix -> Shader -> TextRender -> IO ()
-renderText cm (Shader sp) (TextRender font string _ _) = do
-  setFontFaceSize font 1 1
+renderText _ _ (TextRender font string (V2 x y) size) = do
+  loadIdentity
+
+  (V2 w h) <- ioRenderSize :: IO (V2 Float)
+  ortho 0 (realToFrac w) 0 (realToFrac h) (-1) 1
+  translate $ (Vector3 (realToFrac x) (realToFrac y) 0 :: Vector3 GLfloat)
+
+  color (Color3 1 1 1 :: Color3 GLfloat)
+  setFontFaceSize font size (size * 2)
   renderFont font string All
 
 -- | Performing a bunch of @'Renders'@.
