@@ -57,14 +57,13 @@ loadAssets =
   performLoad $ mconcat $
     [ ShaderLoad "res/game2d"
     , ShaderLoad "res/text"
-    
+
     , SpriteLoad "res/background.png"
     , SpriteLoad "res/bullet.png"
     
-    , FontLoad "res/speculo.ttf"
     , FontLoad "res/speculum.ttf"
     ] ++
-    
+
     generateLoadFrames  4 "res/player/"      ++
     generateLoadFrames  3 "res/enemy/"       ++
     generateLoadFrames 15 "res/asteroid/01/"

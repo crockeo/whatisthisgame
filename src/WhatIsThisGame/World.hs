@@ -42,26 +42,48 @@ makeRenderSprites assets =
         join (RenderSprites ss) (RenderSprite  sr) = RenderSprites $ prependSpriteRender sr ss
         join                 _                  _  = error "This should not be happening."
 
+-- | Rendering while the game is going on.
+midRender :: Assets -> World -> Renders
+midRender assets w =
+  [ makeRenderSprites assets $ worldGetBackgrounds w
+  , makeRenderSprites assets $ worldGetAsteroids   w
+
+  , RenderText $ TextRender (getFonts assets ! "res/speculum.ttf")
+                            ("Score: " ++ show (worldGetScore w))
+                            (V2 5 5)
+                            4
+
+  , RenderText $ TextRender (getFonts assets ! "res/speculum.ttf")
+                            ("Lives: " ++ show (worldGetLives w))
+                            (V2 5 15)
+                            4
+
+  , makeRenderSprites assets $ worldGetEnemies     w
+  , makeRenderSprites assets $ worldGetBullets     w
+  , head $ render assets     $ worldGetPlayer      w
+  ]
+
+-- | Rendering when the player has lost.
+lostRender :: Assets -> World -> Renders
+lostRender assets w =
+  [ makeRenderSprites assets $ worldGetBackgrounds w
+  , makeRenderSprites assets $ worldGetAsteroids   w
+  , makeRenderSprites assets $ worldGetEnemies     w
+  , makeRenderSprites assets $ worldGetBullets     w
+  , head $ render assets     $ worldGetPlayer      w
+
+  , RenderText $ TextRender (getFonts assets ! "res/speculum.ttf")
+                            ("You lost! (With a score of " ++ show (worldGetScore w) ++ "!)")
+                            (V2 5 15)
+                            25
+  ]
+
 -- | Providing the rendering for the @'World'@.
 instance Renderable World where
   render assets w =
-    [ makeRenderSprites assets $ worldGetBackgrounds w
-    , makeRenderSprites assets $ worldGetAsteroids   w
-
-    , RenderText $ TextRender (getFonts assets ! "res/speculum.ttf")
-                              ("Score: " ++ show (worldGetScore w))
-                              (V2 5 5)
-                              4
-
-    , RenderText $ TextRender (getFonts assets ! "res/speculum.ttf")
-                              ("Lives: " ++ show (worldGetLives w))
-                              (V2 5 15)
-                              4
-
-    , makeRenderSprites assets $ worldGetEnemies     w
-    , makeRenderSprites assets $ worldGetBullets     w
-    , head $ render assets     $ worldGetPlayer      w
-    ]
+    if worldGetLives w <= 0
+      then lostRender assets w
+      else midRender  assets w
 
 -- | The initial state of the world.
 initialWorld :: Entity -> World
@@ -89,13 +111,17 @@ world' w = do
   s   <- currentScore
   ls  <- calculateLives $ fmap snd esd
 
-  delay (initialWorld $ initialPlayer y) $ World <$> p
-                                                 <*> bs
-                                                 <*> as
-                                                 <*> fmap fst esd
-                                                 <*> bus
-                                                 <*> s
-                                                 <*> ls
+  delay (initialWorld $ initialPlayer y) $
+    (>>=) w $ \w' ->
+      if worldGetLives w' <= 0
+        then w
+        else World <$> p
+                   <*> bs
+                   <*> as
+                   <*> fmap fst esd
+                   <*> bus
+                   <*> s
+                   <*> ls
   where calcPos :: V2 Float -> Float
         calcPos (V2 _ h) = (h / 2) - (playerSize ^. _y / 2)
 
